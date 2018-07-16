@@ -42,3 +42,8 @@ export {
    flatten,
    unflatten
 } from './lib/util/Flatten';
+
+
+// Import default actions
+import './lib/actions/syncTopicAction';
+import './lib/actions/syncTopicsAction';

@@ -16,7 +16,7 @@ export interface MidleWareContext {
 
 export type MidleWare = (context: MidleWareContext, next: () => void) => void;
 
-export default class WebSocketPubSub {
+export default class PubSubServer {
 
    webSocketServer: WebSocket.Server;
 
