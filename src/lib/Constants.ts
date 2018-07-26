@@ -32,7 +32,7 @@ export interface ActionResponse {
    /**
     * Permite mapear resposta a requisições
     */
-   requestId?: string;
+   requestId: string;
 }
 
 /**

@@ -1,21 +1,39 @@
 {
    "compilerOptions": {
-      "module": "commonjs",
-      "esModuleInterop": true,
       "target": "es6",
-      "noImplicitAny": true,
-      "moduleResolution": "node",
+      "module": "ESNext",
       "sourceMap": true,
-      "outDir": "dist",
-      "baseUrl": ".",
+      "rootDir": "src",
+      "declaration": true,
+      "outDir": "./dist",
+      "baseUrl": "./",
+      "noEmit": false,
+      "strict": true,
+      "noImplicitAny": true,
+      "skipLibCheck": true,
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "lib": [
+         "dom",
+         "esnext",
+         "es5"
+      ],
       "paths": {
          "*": [
             "node_modules/*",
             "src/types/*"
          ]
-      }
+      },
+      "types": [
+        
+      ]
    },
-   "include": [
-      "src/**/*"
+   "exclude": [
+      "index.js",
+      "rn-cli.config.js",
+      "node_modules",
+      "dist",
+      "jest"
    ]
 }

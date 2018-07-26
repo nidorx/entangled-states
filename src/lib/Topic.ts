@@ -95,7 +95,7 @@ export default class Topic {
     */
    static REGISTERED_NAMES: Array<string> = [];
 
-   static store: Datastore = null;
+   static store?: Datastore;
 
    static setStorage = (store: Datastore) => {
       Topic.store = store;
@@ -104,7 +104,7 @@ export default class Topic {
    /**
     * Obtém a instancia de um topico por nome. Se não exisitr, faz a instanciação do mesmo
     */
-   static find = (name: string): Topic => {
+   static find = (name: string): Topic | undefined => {
       let topic = Topic.ALL.find(topic => name === topic.getName());
       if (!topic) {
          // Tópico não existe, verifica se o nome do topico é valido
@@ -232,7 +232,7 @@ export default class Topic {
 
       // Novo estado do tópico
       const newState: TopicState = {
-         seq: undefined,
+         seq: -1,
          data: flattenData,
          deltas: []
       }

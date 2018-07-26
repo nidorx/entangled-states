@@ -13,7 +13,7 @@ const PRIMITIVES = {
 /**
  * As chaves já conhecidas, evita trafego desnecessário
  */
-const DEFAULT_KEYS = [
+const DEFAULT_KEYS: Array<any> = [
    '{', '}', '|', ':',
    '@',
    'a', 'm', 'd', 'r',
@@ -50,7 +50,7 @@ function mapToIndex(str: string) {
  */
 export function compress(flatObj: any) {
 
-   var keys = [].concat(DEFAULT_KEYS);
+   var keys = DEFAULT_KEYS.slice(0);
    // Quando o tipo do dado é dúbil (ex 1.21 pode ser "1.21" ou um float, ou true, pode ser "true" ou o booleano)
    // O índice é salvo
    var markedAsString: Array<string> = [];
@@ -145,7 +145,7 @@ export function decompress(compressed: string) {
 
    var json = '{';
    var markedAsString = [];
-   var keysValues = [].concat(DEFAULT_KEYS);
+   var keysValues = DEFAULT_KEYS.slice(0);
 
    let string = '';
    for (var index = 0, l = compressed.length; index < l; index++) {

@@ -1,8 +1,13 @@
 {
    "name": "websocket-pubsub",
-   "version": "0.0.1",
+   "version": "0.0.2",
    "description": "PubSub para aplicações de baixa e média complexidade node.js + websocket",
    "main": "dist/index.js",
+   "files": [
+      "dist",
+      "LICENSE",
+      "README.md"
+   ],
    "scripts": {
       "start": "npm run watch",
       "build": "npm run build-ts",
