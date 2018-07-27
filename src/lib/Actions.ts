@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
 
-type Callback = (data: any, ws: WebSocket, accept: (data?: any) => void, reject: (cause: any) => void) => void;
+export type Callback = (data: any, ws: WebSocket, accept: (data?: any) => void, reject: (cause: any, message?: string) => void) => void;
 
 class Actions {
 
@@ -13,13 +13,16 @@ class Actions {
     * @param data 
     * @param ws 
     */
-   exec(name: string, data: any, ws: WebSocket): Promise<any> {      
+   exec(name: string, data: any, ws: WebSocket): Promise<any> {
       return new Promise<any>((accept, reject) => {
          if (!this.actions.hasOwnProperty(name)) {
             return reject('Operação não cadastrada');
          }
 
-         this.actions[name](data, ws, accept, reject);
+         this.actions[name](data, ws, accept, (cause: any, message?: string) => {
+            console.error(name, cause, message || '');
+            reject(message || cause);
+         });
       });
    }
 

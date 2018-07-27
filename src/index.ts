@@ -17,7 +17,8 @@ export {
 } from './lib/PubSubClient';
 
 export {
-   default as Actions
+   default as Actions,
+   Callback
 } from './lib/Actions';
 
 export {
