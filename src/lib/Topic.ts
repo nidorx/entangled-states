@@ -2,6 +2,7 @@ import * as WebSocket from 'ws';
 import DiffPatch from 'dffptch';
 import { flatten } from './util/Flatten';
 import { Datastore } from './Constants';
+import { decompress, compress } from './util/Compact';
 
 /**
  * Tenta enviar para os clientes que não responderam neste intervalo
@@ -27,10 +28,14 @@ export interface TopicResponse {
    seq: number;
    /**
    * Corpo da mensagem, quando enviado todo o conteúdo para o cliente
+   * 
+   * FLATTEN COMPRESSED
    */
    data?: any;
    /**
    * Diff, quando o cliente já possui dados atualizados (3 ultimas atualizações), envia apenas um patch, que será aplicado pelo cliente
+   * 
+   * FLATTEN COMPRESSED
    */
    delta?: any;
    /**
@@ -59,29 +64,57 @@ export interface TopicSubscriber {
 }
 
 /**
- * Representação do estado atual deste tópico
+ * Representação dos dados de um tópico
  */
-export interface TopicState {
+export interface TopicData {
    /**
-    * Número sequencial da mensagem 
+    * O número sequencial desta mensagem
     */
    seq: number;
    /**
-    * Dados da mensagem, flatten.
+    * Mensagem original deste sequencial
     * 
-    * Esse conteúdo NÃO É SALVO na base de dados, e também NÃO É transportado para o cliente, é usado apenas para fazer o diff das alterações
+    * FLATTEN
     */
-   data?: any;
+   dataFlatten?: any;
+   /**
+    * Mensagem original deste sequencial comprimido, é persistido na base de dados e também é recuperado durante o carregamento
+    * 
+    * FLATTEN COMPRESSED
+    */
+   dataCompressed: string;
+}
+
+/**
+ * Representação dos deltas de um tópico
+ */
+export interface TopicDelta extends TopicData {
+   /**
+    * Diferença entre o estado atual dos dados e o estado da mensagem deste delta
+    * 
+    * FLATTEN COMPRESSED
+    */
+   diffCompressed: string;
+}
+
+/**
+ * Representação do estado atual deste tópico
+ */
+export interface TopicState extends TopicData {
+   /**
+    * O nome deste tópico
+    */
+   name: string;
    /**
     * Calcula e salva o Diff das ultimas <NUM_DELTAS_HISTORY> mensagens no tópico.
     * 
     * Usado para envio rápido a usuários com atraso de rede temporário
     */
-   deltas: Array<{ seq: number; data: any; diff: any }>
+   deltas: Array<TopicDelta>
 }
 
 /**
- * Representação de um tópico
+ * Tópico genérico
  */
 export default class Topic {
 
@@ -95,10 +128,16 @@ export default class Topic {
     */
    static REGISTERED_NAMES: Array<string> = [];
 
-   static store?: Datastore;
+   /**
+    * Permite persistir e recuperar o estado das mensagens do tópico da base de dados
+    */
+   static storage?: Datastore;
 
-   static setStorage = (store: Datastore) => {
-      Topic.store = store;
+   /**
+    * Define o mecanismo de backup e restauração do tópico
+    */
+   static setStorage = (storage: Datastore) => {
+      Topic.storage = storage;
    }
 
    /**
@@ -129,6 +168,11 @@ export default class Topic {
    }
 
    /**
+    * Sequencial das mensagens deste tópico
+    */
+   private SEQ = 0;
+
+   /**
     * Faz cache de mensagens por sequencial e deltaSequencial, evita invocar JSON.stringify todo o tempo
     */
    private stringifyCached: any;
@@ -137,11 +181,6 @@ export default class Topic {
     * O nome do tópico, usado na mensageria
     */
    private name: string;
-
-   /**
-   * Sequencial das mensagens deste tópico
-   */
-   private SEQ = 0;
 
    /**
     * A cada <RESEND_INTERVAL> segundos envia as mensagens pendentes (clientes que não confirmaram o recebimento)
@@ -159,7 +198,13 @@ export default class Topic {
    /**
     * O estado atual do Tópico, contendo a mesagem atual e o diff das ultmas <NUM_DELTAS_HISTORY> mensagens
     */
-   private state: TopicState = { seq: 0, data: undefined, deltas: [] };
+   private state: TopicState = {
+      name: this.getName(),
+      seq: 0,
+      dataFlatten: undefined,
+      dataCompressed: '',
+      deltas: []
+   };
 
    /**
    * Indica que está efetuando o carregamento dos dados historicos 
@@ -210,6 +255,7 @@ export default class Topic {
          this.next = newData;
          return;
       }
+
       this.isSending = true;
 
       // Garante que não possui nova mensagen na fila
@@ -226,18 +272,21 @@ export default class Topic {
 
       if (!Array.isArray(flattenData) && typeof flattenData !== 'object') {
          // Tópicos só trabalham com Array ou objetos
+         // @TODO: Tratar remoção de itens
          this.isSending = false;
          return;
       }
 
       // Novo estado do tópico
       const newState: TopicState = {
+         name: this.getName(),
          seq: -1,
-         data: flattenData,
+         dataFlatten: flattenData,
+         dataCompressed: compress(flattenData),
          deltas: []
       }
 
-      if (this.state.data) {
+      if (this.state.dataFlatten) {
          // Já possui uma mensagem atual
          // Verifica se tem alterações
 
@@ -250,7 +299,7 @@ export default class Topic {
          //  3 - Compressão
          // ==================================================================
 
-         let delta = DiffPatch.diff(this.state.data, newState.data);
+         let delta = DiffPatch.diff(this.state.dataFlatten, newState.dataFlatten);
          if (Object.keys(delta).length === 0) {
             // Não possui alterações, ignora o versionamento e envio
             this.isSending = false;
@@ -268,14 +317,15 @@ export default class Topic {
 
          // Calcula os novos deltas
          newState.deltas.forEach(delta => {
-            delta.diff = DiffPatch.diff(delta.data, newState.data)
+            delta.diffCompressed = compress(DiffPatch.diff(delta.dataFlatten, newState.dataFlatten));
          });
 
          // Insere o novo diff no inicio
          newState.deltas.push({
             seq: this.state.seq,
-            data: this.state.data,
-            diff: delta
+            dataFlatten: this.state.dataFlatten,
+            dataCompressed: this.state.dataCompressed,
+            diffCompressed: compress(delta)
          });
       }
 
@@ -385,11 +435,11 @@ export default class Topic {
          // Se houver algum delta para a mensagem que o subscrito possui, envia esse delta
          let delta = this.state.deltas.find(delta => delta.seq === subscriber.lastReceivedSeq);
          if (delta) {
-            message.delta = delta.diff
             message.deltaSeq = delta.seq;
+            message.delta = delta.diffCompressed;
          } else {
             // Não possui delta, envia a mensagem completa
-            message.data = this.state.data
+            message.data = this.state.dataCompressed;
          }
       }
 
@@ -399,11 +449,11 @@ export default class Topic {
          // Se houver algum delta para a mensagem que o subscrito possui, envia esse delta
          let delta = this.state.deltas.find(delta => delta.seq === subscriber.lastSeq);
          if (delta) {
-            message.delta = delta.diff
             message.deltaSeq = delta.seq;
+            message.delta = delta.diffCompressed;
          } else {
             // Não possui delta, envia a mensagem completa
-            message.data = this.state.data
+            message.data = this.state.dataCompressed;
          }
       }
 
@@ -451,8 +501,8 @@ export default class Topic {
       let retries = 1;
       const tryToLoad = () => {
 
-         if (Topic.store) {
-            Topic.store.findOne({ name: this.getName() }, {}, (err, document?: TopicState) => {
+         if (Topic.storage) {
+            Topic.storage.findOne({ name: this.getName() }, {}, (err, document?: TopicState) => {
                if (err) {
                   console.error(`Erro durante o carregamento do tópico ${this.getName()}, ${retries}a tentativa`, err);
                   setTimeout(tryToLoad, 10);
@@ -463,11 +513,19 @@ export default class Topic {
                this.isLoading = false;
 
                if (document) {
-                  // Novo tópico
+                  // Extrai os dados comprimidos da base
                   this.SEQ = document.seq;
                   this.state.seq = document.seq;
-                  this.state.data = document.data;
-                  this.state.deltas = document.deltas;
+                  this.state.dataFlatten = decompress(document.dataCompressed);
+                  this.state.dataCompressed = document.dataCompressed;
+                  this.state.deltas = document.deltas.map(delta => {
+                     return {
+                        seq: delta.seq,
+                        dataFlatten: decompress(delta.dataCompressed),
+                        dataCompressed: delta.dataCompressed,
+                        diffCompressed: delta.diffCompressed
+                     }
+                  });
                }
 
                // Verifica se já possui novas mensagens a enviar
@@ -496,15 +554,22 @@ export default class Topic {
          let retries = 1;
          const tryToPersist = () => {
 
-            const dados = {
+            // Salva apenas dados comprimidos na base
+            const dados: TopicState = {
                name: this.getName(),
                seq: newState.seq,
-               data: newState.data,
-               deltas: newState.deltas
+               dataCompressed: newState.dataCompressed,
+               deltas: newState.deltas.map(delta => {
+                  return {
+                     seq: delta.seq,
+                     dataCompressed: delta.dataCompressed,
+                     diffCompressed: delta.diffCompressed
+                  }
+               }),
             };
 
-            if (Topic.store) {
-               Topic.store.update({ name: this.getName() }, { $set: dados }, { upsert: true }, (err) => {
+            if (Topic.storage) {
+               Topic.storage.update({ name: this.getName() }, { $set: dados }, { upsert: true }, (err) => {
                   if (err) {
                      console.error(`Erro ao persistir tópico ${this.getName()}, ${retries}a tentativa`, err);
 
