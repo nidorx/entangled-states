@@ -2,11 +2,7 @@
 import Topic from "../Topic";
 import Actions from "../Actions";
 import Publishers from "../Publishers";
-
-interface SyncTopicParams {
-   topic: string;
-   lastReceivedSeq: number;
-}
+import { SyncTopicParams } from "../Constants";
 
 /**
  * Atualiza os registro do ws nos tópicos informados. 
@@ -27,7 +23,7 @@ Actions.register('syncTopics', (data: Array<SyncTopicParams>, ws, accept) => {
       const info = data.find(item => item.topic === topic.getName());
       if (info) {
          // Atualiza o cliente no tópico
-         topic.subscribe(ws, info.lastReceivedSeq);
+         topic.subscribe(ws, info.seq);
 
          // Solicita a republicação no tópico
          let parts = info.topic.split('#');

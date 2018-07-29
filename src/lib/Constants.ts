@@ -36,6 +36,20 @@ export interface ActionResponse {
 }
 
 /**
+ * Parametros das ações de sincronização de tópicos do Client com o Server
+ */
+export interface SyncTopicParams {
+   /**
+    * O nome do tópico
+    */
+   topic: string;
+   /**
+    * O último sequencial recebido pelo client
+    */
+   seq: number;
+}
+
+/**
  * Interface genérica usada neste publishers
  */
 export interface Datastore {

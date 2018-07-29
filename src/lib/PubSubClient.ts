@@ -1,6 +1,6 @@
 import DiffPatch from "dffptch";
 import { unflatten } from "./util/Flatten";
-import { ActionResponse } from "./Constants";
+import { ActionResponse, SyncTopicParams } from "./Constants";
 import { decompress, compress } from "./util/Compact";
 import ClientStorage from "./storage/ClientStorage";
 
@@ -383,8 +383,8 @@ export default class PubSubClient {
             }
             return {
                topic: topic,
-               lastReceivedID: this.subscriptions[topic].seq
-            }
+               seq: this.subscriptions[topic].seq
+            } as SyncTopicParams;
          })
          .filter(item => item !== undefined);
 
@@ -398,6 +398,9 @@ export default class PubSubClient {
     * Evita que o servidor envie todas as mensagens para todos
     */
    private syncTopic(topic: string) {
-      this.exec('syncTopic', { topic: topic, lastReceivedSeq: this.subscriptions[topic].seq });
+      this.exec('syncTopic', {
+         topic: topic,
+         seq: this.subscriptions[topic].seq
+      } as SyncTopicParams);
    }
 }
