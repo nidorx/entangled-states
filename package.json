@@ -1,8 +1,7 @@
 {
    "name": "websocket-pubsub",
-   "version": "0.0.4",
+   "version": "0.0.5",
    "description": "PubSub para aplicações de baixa e média complexidade node.js + websocket",
-   "main": "dist/index.js",
    "files": [
       "dist",
       "LICENSE",

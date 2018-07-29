@@ -1,10 +1,10 @@
 import * as http from 'http';
 import * as WebSocket from 'ws';
-import { ActionResponse, ActionRequest } from "./Constants";
-import Topic from "./Topic";
-import Actions from "./Actions";
 import { Server } from "http";
 import { ServerOptions } from 'ws';
+import Topic from "./Topic";
+import Actions from "./Actions";
+import { ActionResponse, ActionRequest } from "./Constants";
 
 export interface MidleWareContext {
    ws: WebSocket;

@@ -1,8 +1,8 @@
 import DiffPatch from "dffptch";
 import { unflatten } from "./util/Flatten";
-import { ActionResponse } from "..";
+import { ActionResponse } from "./Constants";
 import { decompress, compress } from "./util/Compact";
-import ClientStorage from "./util/ClientStorage";
+import ClientStorage from "./storage/ClientStorage";
 
 /**
  * Mensagens provenientes do servidor
