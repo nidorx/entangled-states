@@ -1,8 +1,8 @@
 {
-   "name": "websocket-pubsub-react",
-   "version": "0.0.6",
-   "description": "PubSub para aplicações de baixa e média complexidade node.js + websocket",
-   "main": "dist/react.js",
+   "name": "websocket-pubsub",
+   "version": "0.0.8",
+   "description": "Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade",
+   "main": "dist/node.js",
    "files": [
       "dist",
       "LICENSE",
@@ -32,7 +32,6 @@
       "typescript": "^2.9.2"
    },
    "peerDependencies": {
-      "ws": "^5.2.1",
-      "react-native": "*"
+      "ws": "^5.2.1"
    }
 }

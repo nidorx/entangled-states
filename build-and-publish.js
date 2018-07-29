@@ -19,6 +19,21 @@ build.on('exit', function (code, signal) {
       var package = JSON.parse(fs.readFileSync(__dirname + '/package.json'));
       package.main = 'dist/' + version + '.js';
       package.name = 'websocket-pubsub' + (version === 'node' ? '' : ('-' + version));
+
+      let peerDependencies;
+
+      if (version === 'node') {
+         peerDependencies = {
+            "ws": "^5.2.1"
+         };
+      } else if (version === 'react') {
+         peerDependencies = {
+            "react-native": "*"
+         };
+      }
+
+      package.peerDependencies = peerDependencies;
+
       fs.writeFileSync(__dirname + '/package.json', JSON.stringify(package, null, 3));
 
       const publish = exec('npm publish');
