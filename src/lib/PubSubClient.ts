@@ -1,13 +1,8 @@
 import DiffPatch from "dffptch";
 import { unflatten } from "./util/Flatten";
 import { ActionResponse } from "..";
-import { decompress } from "./util/Compact";
-
-export interface ClientStore {
-   get: () => Promise<ClientTopicState>;
-   set: (state: ClientTopicState) => Promise<any>;
-}
-
+import { decompress, compress } from "./util/Compact";
+import ClientStorage from "./util/ClientStorage";
 
 /**
  * Mensagens provenientes do servidor
@@ -36,21 +31,40 @@ interface TopicResponse {
 }
 
 /**
+ * Dado do tópico persistido no local storage
+ */
+interface SubscriptionStorage {
+   /**
+     * Número sequencial da mensagem 
+     */
+   seq: number;
+
+   /**
+    * Dados do tópico FLAT COMPRESSED.
+    */
+   compressed: string;
+}
+
+
+/**
  * Representação do estado atual deste tópico
  */
-interface ClientTopicState {
+interface SubscriptionState {
    /**
     * Número sequencial da mensagem 
     */
    seq: number;
+
    /**
     * Dados da mensagen, disponível para uso
     */
    data?: any;
+
    /**
     * Dados da mensagem, FLAT. Formato persistido e proveniente do servidor (incluido deltas)
     */
    flatData?: any;
+
    /**
     * 
     */
@@ -64,26 +78,21 @@ interface ClientTopicState {
  * 
  * Implementa um mecanismo de sincronização com o servidor, informando ao mesmo sobre a ultima versão recebida de cada tópico
  */
-export default class DataLayer {
+export default class PubSubClient {
 
-   static SEQ = { id: Date.now() };
+   /**
+    * Identificador das requisições feitas ao servidor
+    */
+   static REQUEST_SEQUENCE = { id: Date.now() };
 
    private ws: WebSocket | undefined;
 
-   private initializing = true;
-
-   private connected = false;
-
    private reconnect = true;
-
-   private lastSavedID: number = 0;
-
-   // private lastReceivedID: number = 0;
 
    /**
     * Deixa salvo as inscrições em tópicos, em problema de conexão, solicita novamente a subscriçao
     */
-   private subscriptions: { [key: string]: ClientTopicState } = {};
+   private subscriptions: { [key: string]: SubscriptionState } = {};
 
    /**
     * Permite receber resposta para uma execução
@@ -96,39 +105,12 @@ export default class DataLayer {
    } = {};
 
    private host: string;
-   private store: ClientStore;
 
-   constructor(host: string, store: ClientStore) {
+   private storage: ClientStorage;
+
+   constructor(host: string, storage: ClientStorage) {
       this.host = host;
-      this.store = store;
-
-      if (this.store) {
-
-      }
-
-      // Obtém os dados dos tópicos que foram salvos para consulta OFFLINE (Usando AsyncStorage)
-      // this.store.get().then(subscriptions => {
-      //    if (subscriptions !== null) {
-      //       console.log(subscriptions);
-      //    }
-      this.initializing = false;
-      // });
-
-      // Em intervalos regulares, persiste os dados dos topicos para consulta offline
-      // setInterval(() => {
-      //    // Só persiste quando recebe novas mensagens
-      //    if (this.lastSavedID !== this.lastReceivedID) {
-      //       const ID = this.lastReceivedID;
-      //       const mapped = Object.keys(this.subscriptions).map(value =>{
-      //          return {
-
-      //          }
-      //       })
-      //        this.store.set(JSON.stringify(this.subscriptions)).then(() => {
-      //          this.lastSavedID = ID;
-      //       });
-      //    }
-      // }, 10000);
+      this.storage = storage;
    }
 
    /**
@@ -136,7 +118,6 @@ export default class DataLayer {
     */
    close() {
       this.reconnect = false;
-      this.connected = false;
 
       //@TODO: Limpar todas as referencias para callbacks
       // this.subscriptions = {};
@@ -155,12 +136,10 @@ export default class DataLayer {
       if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
          return;
       }
-
+      this.reconnect = true;
       this.ws = new WebSocket(this.host);
 
       this.ws.onopen = () => {
-         this.connected = true;
-
          if (this.ws) {
             // connection opened
             this.syncTopics();
@@ -230,9 +209,8 @@ export default class DataLayer {
                if (message.deltaSeq === subscription.seq) {
                   // É o diff correto
                   update = true;
-                  DiffPatch.patch(subscription.flatData, decompress(message.delta));
-                  subscription.data = unflatten(subscription.flatData);
                   subscription.seq = message.seq;
+                  DiffPatch.patch(subscription.flatData, decompress(message.delta));
                } else {
                   // Delta inválido, pode ser mensagem atrasada
                   this.syncTopic(message.topic);
@@ -242,28 +220,29 @@ export default class DataLayer {
                update = true;
                subscription.seq = message.seq;
                subscription.flatData = decompress(message.data);
-               subscription.data = unflatten(subscription.flatData);;
             }
 
             if (update) {
+               subscription.data = unflatten(subscription.flatData);
 
-               // Atualiza a informação para garantir a pesistencia no AsyncStorage
-               // this.lastReceivedID++;
-
-               // Sincroniza com o servidor sobre a ultima mensagem recebida no tópico
-               this.syncTopic(message.topic);
-
-               let data: any = null;
-               if (subscription.data !== undefined) {
-                  const jsonDelta = JSON.stringify(subscription.data);
-                  data = JSON.parse(jsonDelta);
-               }
                // console.log('msg', message.topic, data);
                // Entrega mensagem aos interessados
                subscription.callbacks.forEach((callback: (data: any) => void) => {
                   // callback(data);
                   callback(subscription.data);
                });
+
+               // Sincroniza com o servidor sobre a ultima mensagem recebida no tópico
+               this.syncTopic(message.topic);
+
+               // Salva no Storage os dados do tópico
+               // Só persiste quando recebe novas mensagens
+               setTimeout(() => {
+                  this.storage.set(`topic_${message.topic}`, {
+                     seq: subscription.seq,
+                     compressed: compress(subscription.flatData),
+                  } as SubscriptionStorage);
+               }, 0);
             }
          }
       };
@@ -275,7 +254,6 @@ export default class DataLayer {
 
       this.ws.onclose = (e) => {
          // connection closed
-         this.connected = false;
          if (this.reconnect) {
             // Faz nova conexão
             setTimeout(this.connect.bind(this), 10);
@@ -300,26 +278,40 @@ export default class DataLayer {
       this.subscriptions[topic].callbacks.push(callback);
 
       // Se já possuir dados (OFFLINE), já entrega ao solicitante 
-      const tryOfflineData = () => {
-         if (this.initializing) {
-            setTimeout(tryOfflineData, 10);
-            return;
-         }
+      if (this.subscriptions[topic].data) {
+         callback(this.subscriptions[topic].data);
 
-         if (this.subscriptions[topic].data) {
-            let idx = this.subscriptions[topic].callbacks.indexOf(callback);
-            if (idx >= 0) {
+         // Sincroniza os tópicos de interesse
+         this.syncTopics();
+      } else {
+         // Verifica se no Storage possui cache da mensagem
+         this.storage.get(`topic_${topic}`)
+            .then((data) => {
+               let idx = this.subscriptions[topic].callbacks.indexOf(callback);
+               // Se houver dados no storage e ainda não recebeu a mensagem do server, e ainda o callback é valido
                // Só invoca o callback se esse subscription não tiver sido removido
-               callback(this.subscriptions[topic].data);
-            }
+               if (data && !this.subscriptions[topic].data && idx >= 0) {
 
-         }
+                  // Preenche os dados do tópico
+                  const storageTopic = data as SubscriptionStorage;
+                  const subscription = this.subscriptions[topic];
+
+                  subscription.seq = storageTopic.seq;
+                  subscription.flatData = decompress(storageTopic.compressed);
+                  subscription.data = unflatten(subscription.flatData);
+
+                  callback(this.subscriptions[topic].data);
+               }
+
+               // Sincroniza os tópicos de interesse
+               this.syncTopics();
+            })
+            .catch(err => {
+
+               // Sincroniza os tópicos de interesse
+               this.syncTopics();
+            });
       }
-
-      tryOfflineData();
-
-      // Registra os tópicos de interesse
-      this.syncTopics();
 
       let canceled = false;
       // Cancelable
@@ -347,7 +339,7 @@ export default class DataLayer {
     */
    exec(action: string, data: any): Promise<any> {
 
-      const requestId = `${DataLayer.SEQ.id++}`;
+      const requestId = `${PubSubClient.REQUEST_SEQUENCE.id++}`;
       const promise = new Promise<any>((accept, reject) => {
          if (this.ws) {
 
@@ -368,15 +360,12 @@ export default class DataLayer {
       });
 
       // Após 30 segundos, se não hover resposta, Timeout
-      setTimeout(
-         () => {
-            if (this.promises[requestId]) {
-               this.promises[requestId].reject('A resposta da requisição excedeu 30 segundos.');
-               delete this.promises[requestId];
-            }
-         },
-         30000
-      );
+      setTimeout(() => {
+         if (this.promises[requestId]) {
+            this.promises[requestId].reject('A resposta da requisição excedeu 30 segundos.');
+            delete this.promises[requestId];
+         }
+      }, 30000);
 
       return promise;
    }
@@ -386,11 +375,6 @@ export default class DataLayer {
     * Evita que o servidor envie todas as mensagens para todos
     */
    private syncTopics() {
-      if (this.initializing) {
-         setTimeout(this.syncTopics.bind(this), 10);
-         return;
-      }
-
       const data = Object.keys(this.subscriptions)
          .map(topic => {
             // Se não existe callback, não está subscrito

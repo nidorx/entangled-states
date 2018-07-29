@@ -1,6 +1,6 @@
 {
    "name": "websocket-pubsub",
-   "version": "0.0.3",
+   "version": "0.0.4",
    "description": "PubSub para aplicações de baixa e média complexidade node.js + websocket",
    "main": "dist/index.js",
    "files": [
@@ -9,7 +9,6 @@
       "README.md"
    ],
    "scripts": {
-      "prepublish": "npm run build",
       "start": "npm run watch",
       "build": "npm run build-ts",
       "serve": "node dist/index.js",
@@ -26,11 +25,14 @@
    "devDependencies": {
       "ws": "^5.2.1",
       "@types/ws": "^5.1.2",
+      "@types/react-native": "0.55.23",
+      "react-native": "0.55.4",
       "concurrently": "^3.5.1",
       "nodemon": "^1.13.0",
       "typescript": "^2.9.2"
    },
    "peerDependencies": {
-      "ws": "^5.2.1"
+      "ws": "^5.2.1",
+      "react-native": "*"
    }
 }
