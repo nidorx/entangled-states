@@ -25,9 +25,7 @@
             "src/types/*"
          ]
       },
-      "types": [
-        
-      ]
+      "types": []
    },
    "exclude": [
       "index.js",
