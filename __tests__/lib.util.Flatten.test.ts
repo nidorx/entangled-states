@@ -7,6 +7,7 @@ describe('Flatten', () => {
     */
    const UNFLATTED = {
       string: 'string',
+      "@string": 'string',
       number: 1,
       float: 0.5,
       null: null,
@@ -18,7 +19,57 @@ describe('Flatten', () => {
       arrayMixed: [1, 'string', 0.05, null, undefined],
       arrayEmpty: [],
       arrayEmpty2: [undefined, undefined],
-      arrayObject: [],
+      arrayObject: [
+         {
+            id: 1,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            undefined: undefined,
+            arrayString: ['string', 'string2', 'string3', undefined],
+            arrayNumber: [1, 2, 3, undefined],
+            arrayMixed: [1, 'string', 0.05, null, undefined],
+            arrayEmpty: [],
+            arrayEmpty2: [undefined, undefined],
+            arrayObject: [
+               {
+                  id: 3,
+                  string: 'string',
+                  number: 1,
+                  float: 0.5,
+                  null: null,
+                  true: true,
+                  false: false,
+                  undefined: undefined,
+                  arrayString: ['string', 'string2', 'string3', undefined],
+                  arrayNumber: [1, 2, 3, undefined],
+                  arrayMixed: [1, 'string', 0.05, null, undefined],
+                  arrayEmpty: [],
+                  arrayEmpty2: [undefined, undefined],
+                  arrayObject: [],
+               }
+            ],
+         },
+         {
+            id: 2,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            undefined: undefined,
+            arrayString: ['string', 'string2', 'string3', undefined],
+            arrayNumber: [1, 2, 3, undefined],
+            arrayMixed: [1, 'string', 0.05, null, undefined],
+            arrayEmpty: [],
+            arrayEmpty2: [undefined, undefined],
+            arrayObject: [],
+         }
+      ],
    };
 
    /**
@@ -26,6 +77,7 @@ describe('Flatten', () => {
     */
    const FLATTED = {
       string: 'string',
+      "@@string": 'string',
       number: 1,
       float: 0.5,
       null: null,
@@ -36,7 +88,56 @@ describe('Flatten', () => {
       arrayMixed: { "@": 0, "0": 1, "1": "string", "2": 0.05, "3": null },
       arrayEmpty: { "@": 0 },
       arrayEmpty2: { "@": 0 },
-      arrayObject: { "@": 0 },
+      arrayObject: {
+         "@": 1,
+         "1": {
+            id: 1,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            arrayString: { "@": 0, "0": "string", "1": "string2", "2": "string3" },
+            arrayNumber: { "@": 0, "0": 1, "1": 2, "2": 3 },
+            arrayMixed: { "@": 0, "0": 1, "1": "string", "2": 0.05, "3": null },
+            arrayEmpty: { "@": 0 },
+            arrayEmpty2: { "@": 0 },
+            arrayObject: {
+               "@": 1,
+               "3": {
+                  id: 3,
+                  string: 'string',
+                  number: 1,
+                  float: 0.5,
+                  null: null,
+                  true: true,
+                  false: false,
+                  arrayString: { "@": 0, "0": "string", "1": "string2", "2": "string3" },
+                  arrayNumber: { "@": 0, "0": 1, "1": 2, "2": 3 },
+                  arrayMixed: { "@": 0, "0": 1, "1": "string", "2": 0.05, "3": null },
+                  arrayEmpty: { "@": 0 },
+                  arrayEmpty2: { "@": 0 },
+                  arrayObject: { "@": 0 },
+               }
+            },
+         },
+         "2": {
+            id: 2,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            arrayString: { "@": 0, "0": "string", "1": "string2", "2": "string3" },
+            arrayNumber: { "@": 0, "0": 1, "1": 2, "2": 3 },
+            arrayMixed: { "@": 0, "0": 1, "1": "string", "2": 0.05, "3": null },
+            arrayEmpty: { "@": 0 },
+            arrayEmpty2: { "@": 0 },
+            arrayObject: { "@": 0 },
+         }
+      },
    };
 
    /**
@@ -46,6 +147,7 @@ describe('Flatten', () => {
     */
    const REVERSED = {
       string: 'string',
+      "@string": 'string',
       number: 1,
       float: 0.5,
       null: null,
@@ -56,7 +158,54 @@ describe('Flatten', () => {
       arrayMixed: [1, 'string', 0.05, null],
       arrayEmpty: [],
       arrayEmpty2: [],
-      arrayObject: [],
+      arrayObject: [
+         {
+            id: 1,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            arrayString: ['string', 'string2', 'string3'],
+            arrayNumber: [1, 2, 3],
+            arrayMixed: [1, 'string', 0.05, null],
+            arrayEmpty: [],
+            arrayEmpty2: [],
+            arrayObject: [
+               {
+                  id: 3,
+                  string: 'string',
+                  number: 1,
+                  float: 0.5,
+                  null: null,
+                  true: true,
+                  false: false,
+                  arrayString: ['string', 'string2', 'string3'],
+                  arrayNumber: [1, 2, 3],
+                  arrayMixed: [1, 'string', 0.05, null],
+                  arrayEmpty: [],
+                  arrayEmpty2: [],
+                  arrayObject: [],
+               }
+            ],
+         },
+         {
+            id: 2,
+            string: 'string',
+            number: 1,
+            float: 0.5,
+            null: null,
+            true: true,
+            false: false,
+            arrayString: ['string', 'string2', 'string3'],
+            arrayNumber: [1, 2, 3],
+            arrayMixed: [1, 'string', 0.05, null],
+            arrayEmpty: [],
+            arrayEmpty2: [],
+            arrayObject: [],
+         }
+      ],
    };
 
    it('Deve mapear objetos mistos para objetos simples', () => {

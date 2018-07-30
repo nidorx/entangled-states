@@ -52,11 +52,10 @@ export function flatten(obj: any): any {
             isObject = true;
 
             // Se id começar com @, adiciona outra para validação no unflatten
-            id = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? T_ARRAY + id : id;
-
-            const outItem = flatten(item)
-            if (outItem !== undefined) {
-               out[id] = outItem;
+            const newId = (typeof (id) === 'string' && id.charAt(0) === T_ARRAY) ? (T_ARRAY + id) : id;
+            const itemFlatten = flatten(item)
+            if (itemFlatten !== undefined) {
+               out[newId] = itemFlatten;
             }
          }
       });
@@ -80,10 +79,10 @@ export function flatten(obj: any): any {
          }
 
          // Se id começar com @, adiciona outra para validação no unflatten
-         id = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? T_ARRAY + id : id;
-         const outID = flatten(obj[id])
-         if (outID !== undefined) {
-            out[id] = outID;
+         const newId = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? (T_ARRAY + id) : id;
+         const objIdFlatten = flatten(obj[id])
+         if (objIdFlatten !== undefined) {
+            out[newId] = objIdFlatten;
          }
       }
    }
@@ -115,11 +114,11 @@ export function unflatten(obj: any): any {
          if (obj[T_ARRAY] === T_ARRAY_OBJECT) {
 
             // Array de Objetos
-            for (var a in obj) {
-               if (!obj.hasOwnProperty(a) || a === T_ARRAY) {
+            for (var flatId in obj) {
+               if (!obj.hasOwnProperty(flatId) || flatId === T_ARRAY) {
                   continue;
                }
-               const value = unflatten(obj[a]);
+               const value = unflatten(obj[flatId]);
                if (value === undefined) {
                   continue;
                }
@@ -129,11 +128,11 @@ export function unflatten(obj: any): any {
          } else {
 
             // Array de primitivos
-            for (var a in obj) {
-               if (!obj.hasOwnProperty(a) || a === T_ARRAY) {
+            for (var flatId in obj) {
+               if (!obj.hasOwnProperty(flatId) || flatId === T_ARRAY) {
                   continue;
                }
-               out[Number.parseInt(a)] = obj[a];
+               out[Number.parseInt(flatId)] = obj[flatId];
             }
          }
 
@@ -141,18 +140,18 @@ export function unflatten(obj: any): any {
 
          // Objeto normal
          out = {};
-         for (var a in obj) {
-            if (!obj.hasOwnProperty(a)) {
+         for (var flatId in obj) {
+            if (!obj.hasOwnProperty(flatId)) {
                continue;
             }
-            const value = unflatten(obj[a]);
+            const value = unflatten(obj[flatId]);
             if (value === undefined) {
                continue;
             }
 
             // Remove marcação de array
-            const id = (typeof (a) === 'string' && a.charAt(0) == T_ARRAY) ? a.substring(1) : a;
-            out[a] = value;
+            const newId = (typeof (flatId) === 'string' && flatId.charAt(0) == T_ARRAY) ? flatId.substring(1) : flatId;
+            out[newId] = value;
          }
       }
    }
