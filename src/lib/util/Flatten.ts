@@ -8,6 +8,8 @@ const T_ARRAY_PRIMITIVE = 0;
 /**
  * Remover todos os arrays de um objeto, mapeando-os por [id|_id|key|_key] em caso de objetos e INDEX para dados simples
  * 
+ * Valores UNDEFINED são descartados
+ * 
  * @param {*} obj 
  */
 export function flatten(obj: any): any {
@@ -18,65 +20,74 @@ export function flatten(obj: any): any {
       let isObject: any = undefined;
       obj.forEach((item, index) => {
          if (Array.isArray(item)) {
-            // Essa implementação não aceita o uso de array multidimensional. Ex. key=[[],[]]
+            throw new Error('Não é permitido o uso de array multidimensional. Ex. key=[[],[]]');
+         }
+
+         if (item === undefined) {
             return;
          }
+
          const type = typeof item;
-         if (type === 'object') {
-            let id = item._id || item.id || item._key || item.key;
-            if (id === undefined || id === null) {
-               //Essa implementação espera que todos os itens de um array possua id, _id, key ou _key.
-               return;
-            }
-
-            if (isObject === false) {
-               // Essa implementação não permite valores mesclados no array
-               return;
-            }
-            isObject = true;
-
-            // Se id começar com @, adiciona outra para validação no unflatten
-            id = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? T_ARRAY + id : id;
-
-
-            out[id] = flatten(item);
-
-         } else if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol') {
+         if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol' || item === null) {
 
             // validar se existe valor mesclado
             if (isObject) {
-               // Essa implementação não permite valores mesclados  no array
-               return;
+               throw new Error('Não é permitido o uso de Arrays mistos (Objetos e Primitivos)');
             }
 
             isObject = false;
 
             // Array por índice mesmo
             out[index] = item;
+         } else if (type === 'object') {
+            let id = item._id || item.id || item._key || item.key;
+            if (id === undefined || id === null) {
+               //Essa implementação espera que todos os itens de um array possua id, _id, key ou _key.
+               throw new Error('É necessário que todos os itens de um Array de Objetos tenham identificador (id, _id, key ou _key)');
+            }
+
+            if (isObject === false) {
+               throw new Error('Não é permitido o uso de Arrays mistos (Objetos e Primitivos)');
+            }
+            isObject = true;
+
+            // Se id começar com @, adiciona outra para validação no unflatten
+            id = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? T_ARRAY + id : id;
+
+            const outItem = flatten(item)
+            if (outItem !== undefined) {
+               out[id] = outItem;
+            }
          }
       });
 
       // Tipos de array
       out[T_ARRAY] = isObject ? T_ARRAY_OBJECT : T_ARRAY_PRIMITIVE;
 
-      if (Object.keys(out).length === 1) {
-         // Array vazio
-         out = undefined;
-      }
+      // Array vazio, é aceito
+      // if (Object.keys(out).length === 1) {
+   } else if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol' || obj === null) {
+      out = obj
    } else if (type === 'object') {
       out = {};
       for (var id in obj) {
          if (!obj.hasOwnProperty(id)) {
             continue;
          }
+
+         if (obj[id] === undefined) {
+            continue;
+         }
+
          // Se id começar com @, adiciona outra para validação no unflatten
          id = (typeof (id) === 'string' && id.charAt(0) == T_ARRAY) ? T_ARRAY + id : id;
-         out[id] = flatten(obj[id]);
+         const outID = flatten(obj[id])
+         if (outID !== undefined) {
+            out[id] = outID;
+         }
       }
-   } else if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol') {
-      out = obj
    }
-   
+
    return out;
 }
 
@@ -94,7 +105,10 @@ export function unflatten(obj: any): any {
 
    const type = typeof obj;
 
-   if (type === 'object') {
+   if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol' || obj === null) {
+      // primitivo
+      out = obj
+   } else if (type === 'object') {
       if (T_ARRAY in obj) {
          // Reverte array
          out = [];
@@ -141,9 +155,6 @@ export function unflatten(obj: any): any {
             out[a] = value;
          }
       }
-   } else if (type === 'string' || type === 'number' || type === 'boolean' || type === 'symbol') {
-      // primitivo
-      out = obj
    }
 
    return out;

@@ -16,7 +16,7 @@ export default abstract class ClientStorageCached implements ClientStorage {
 
    promises: { [key: string]: Promise<any> } = {};
 
-   timeouts: { [key: string]: number } = {};
+   timeouts: { [key: string]: any } = {};
 
    constructor(namespace: string) {
       this.namespace = namespace;
@@ -106,7 +106,7 @@ export default abstract class ClientStorageCached implements ClientStorage {
 
          this.setItem(key, value)
             .then(() => {
-               
+
                this.cache[key] = value;
 
                this.touch(key);

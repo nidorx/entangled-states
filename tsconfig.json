@@ -25,13 +25,16 @@
             "src/types/*"
          ]
       },
-      "types": []
+      "types": [
+         "jest"
+      ]
    },
    "exclude": [
-      "index.js",
-      "rn-cli.config.js",
+      "jest",
       "node_modules",
+      "__tests__",
       "dist",
-      "jest"
+      "example",
+      "doc"
    ]
 }
