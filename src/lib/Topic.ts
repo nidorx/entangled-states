@@ -48,6 +48,9 @@ export interface TopicResponse {
  * Informação de um cliente deste tópico
  */
 export interface TopicSubscriber {
+   /**
+    * Conexão com o Subscrito
+    */
    ws: WebSocket;
    /**
     * Última mensagem enviada ao cliente

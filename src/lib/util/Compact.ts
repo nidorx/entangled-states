@@ -6,8 +6,7 @@ const OBJECT_CLOSE = String.fromCharCode(2);
 const PRIMITIVES = {
    'true': true,
    'false': false,
-   'null': null as any,
-   'undefined': undefined as any,
+   'null': null as any
 };
 
 /**
@@ -19,9 +18,9 @@ const DEFAULT_KEYS: Array<any> = [
    'a', 'm', 'd', 'r',
    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-   '_id', 'id',
-   true, false, undefined, null,
-   'true', 'false', 'undefined', 'null'
+   '_id', 'id', 'key',
+   true, false, null,
+   'true', 'false', 'null'
 ];
 
 function mapFromIndex(index: number) {
@@ -74,33 +73,36 @@ export function compress(flatObj: any) {
    }
 
    function parse(obj: any) {
-      for (var key in obj) {
-         if (!obj.hasOwnProperty(key)) {
-            continue;
-         }
-
-         let keyIdx = keys.indexOf(key);
-         if (keyIdx < 0) {
-            keyIdx = keys.push(key) - 1;
-         }
-
-         output += mapFromIndex(keyIdx);
-
-         const value = obj[key];
-         if (typeof value === 'object') {
-            output += OBJECT_OPEN;
-            parse(value);
-         } else {
-            let valIdx = keys.indexOf(value);
-            if (valIdx < 0) {
-               valIdx = keys.push(value) - 1;
+      if (typeof obj === 'object') {
+         output += OBJECT_OPEN;
+         for (var key in obj) {
+            if (!obj.hasOwnProperty(key)) {
+               continue;
             }
 
-            output += mapFromIndex(valIdx);
-            markAsString(value);
+            const value = obj[key];
+            if (value === undefined) {
+               continue;
+            }
+
+            let keyIdx = keys.indexOf(key);
+            if (keyIdx < 0) {
+               keyIdx = keys.push(key) - 1;
+            }
+
+            output += mapFromIndex(keyIdx);
+            parse(value);
          }
+         output += OBJECT_CLOSE;
+      } else {
+         let valIdx = keys.indexOf(obj);
+         if (valIdx < 0) {
+            valIdx = keys.push(obj) - 1;
+         }
+
+         output += mapFromIndex(valIdx);
+         markAsString(obj);
       }
-      output += OBJECT_CLOSE;
    }
 
    parse(flatObj);
@@ -143,7 +145,7 @@ export function decompress(compressed: string) {
    let indexReal;
    let isKey = true;
 
-   var json = '{';
+   var json = '';
    var markedAsString = [];
    var keysValues = DEFAULT_KEYS.slice(0);
 
@@ -175,7 +177,7 @@ export function decompress(compressed: string) {
                   value = Number.parseInt(value);
                } else if (value.match(/^[-+]?[\d.,]+$/)) {
                   value = Number.parseFloat(value);
-               } else if (['true', 'false', 'undefined', 'null'].indexOf(value) >= 0) {
+               } else if (['true', 'false', 'null'].indexOf(value) >= 0) {
                   value = (PRIMITIVES as any)[value];
                } else {
                   value = '"' + value + '"';

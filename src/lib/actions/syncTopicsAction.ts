@@ -1,7 +1,6 @@
 
 import Topic from "../Topic";
 import Actions from "../Actions";
-import Publishers from "../Publishers";
 import { SyncTopicParams } from "../Constants";
 
 /**
@@ -24,11 +23,6 @@ Actions.register('syncTopics', (data: Array<SyncTopicParams>, ws, accept) => {
       if (info) {
          // Atualiza o cliente no tópico
          topic.subscribe(ws, info.seq);
-
-         // Solicita a republicação no tópico
-         let parts = info.topic.split('#');
-
-         Publishers.publish(parts[0], parts[1]);
       } else {
          // Cliente não está mais nessa lista
          topic.unsubscribe(ws);
