@@ -1,5 +1,9 @@
 # websocket-pubsub [EM DESENVOLVIMENTO]
 
+[![npm version](https://badge.fury.io/js/websocket-pubsub.svg)](https://badge.fury.io/js/websocket-pubsub)
+[![Build Status](https://travis-ci.org/nidorx/websocket-pubsub.svg?branch=master)](https://travis-ci.org/nidorx/websocket-pubsub)
+
+
 Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade 
 
 <div align="center">
