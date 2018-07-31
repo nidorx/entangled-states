@@ -1,7 +1,11 @@
 
+// IGNORA
+//  34 = '"'
+//  92 = '\'
+// 124 = '|'
 
-const OBJECT_OPEN = String.fromCharCode(1);
-const OBJECT_CLOSE = String.fromCharCode(2);
+const OBJECT_OPEN = String.fromCharCode(33);
+const OBJECT_CLOSE = String.fromCharCode(35);
 
 const PRIMITIVES = {
    'true': true,
@@ -13,31 +17,39 @@ const PRIMITIVES = {
  * As chaves já conhecidas, evita trafego desnecessário
  */
 const DEFAULT_KEYS: Array<any> = [
-   '{', '}', '|', ':',
+   ' ', '{', '}', '|', ':',
    '@',
    'a', 'm', 'd', 'r',
    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-   '_id', 'id', 'key',
+   '$id', '_id', 'id', 'key', '_key',
    true, false, null,
    'true', 'false', 'null'
 ];
 
 function mapFromIndex(index: number) {
+   if (index >= 92) {
+      // Ignora caractere "\"
+      index++;
+   }
    if (index >= 124) {
       // Ignora caractere "|"
       index++;
    }
-   return String.fromCharCode(index + 33);
+   return String.fromCharCode(index + 36);
 }
 
 function mapToIndex(str: string) {
    let charCode = str.charCodeAt(0);
+   if (charCode > 92) {
+      // Restaura caractere "\"
+      charCode--;
+   }
    if (charCode > 124) {
       // Restaura caractere "|"
       charCode--;
    }
-   return charCode - 33;
+   return charCode - 36;
 }
 
 /**
@@ -73,7 +85,33 @@ export function compress(flatObj: any) {
    }
 
    function parse(obj: any) {
-      if (typeof obj === 'object') {
+      const type = typeof obj;
+      if (type === 'string') {
+         const words = obj.split(' ');
+         words.forEach((str: string, index: number) => {
+
+            if (str !== '') {
+               let keyIdx = keys.indexOf(str);
+               if (keyIdx < 0) {
+                  keyIdx = keys.push(str) - 1;
+               }
+
+               output += mapFromIndex(keyIdx);
+            }
+
+            if (index < words.length - 1) {
+               output += mapFromIndex(keys.indexOf(' '));
+            }
+         });
+      } else if (type === 'number' || type === 'boolean' || type === 'symbol' || obj === null) {
+         let keyIdx = keys.indexOf(obj);
+         if (keyIdx < 0) {
+            keyIdx = keys.push(obj) - 1;
+         }
+
+         output += mapFromIndex(keyIdx);
+      } else if (typeof obj === 'object') {
+
          output += OBJECT_OPEN;
          for (var key in obj) {
             if (!obj.hasOwnProperty(key)) {
@@ -94,7 +132,9 @@ export function compress(flatObj: any) {
             parse(value);
          }
          output += OBJECT_CLOSE;
+
       } else {
+
          let valIdx = keys.indexOf(obj);
          if (valIdx < 0) {
             valIdx = keys.push(obj) - 1;

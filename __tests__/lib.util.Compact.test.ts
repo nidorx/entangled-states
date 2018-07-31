@@ -71,7 +71,7 @@ describe('Compact', () => {
       },
    };
 
-   const COMPRESSED = "||string|@@string|number|float|0.5|arrayString|string2|string3|arrayNumber|arrayMixed|0.05|arrayEmpty|arrayEmpty2|arrayObject||\u0001GGHGI5JKF\u0001\u0002DAEBL\u0001*G+M,N%4\u0002O\u0001*5+6,7%4\u0002P\u0001*5+G,Q-\u0001\u0002%4\u0002R\u0001%4\u0002S\u0001%4\u0002T\u0001+\u0001?5GGI5JKF\u0001\u0002DAEBL\u0001*G+M,N%4\u0002O\u0001*5+6,7%4\u0002P\u0001*5+G,Q-\u0001\u0002%4\u0002R\u0001%4\u0002S\u0001%4\u0002T\u0001-\u0001?7GGI5JKF\u0001\u0002DAEBL\u0001*G+M,N%4\u0002O\u0001*5+6,7%4\u0002P\u0001*5+G,Q-\u0001\u0002%4\u0002R\u0001%4\u0002S\u0001%4\u0002T\u0001%4\u0002\u0002%5\u0002\u0002,\u0001?6GGI5JKF\u0001\u0002DAEBL\u0001*G+M,N%4\u0002O\u0001*5+6,7%4\u0002P\u0001*5+G,Q-\u0001\u0002%4\u0002R\u0001%4\u0002S\u0001%4\u0002T\u0001%4\u0002\u0002%5\u0002\u0002";
+   const COMPRESSED = "||string|@@string|number|float|0.5|arrayString|string2|string3|arrayNumber|arrayMixed|0.05|arrayEmpty|arrayEmpty2|arrayObject||!MMNMO9PQLIJGKHR!.M/S0T)8#U!.9/:0;)8#V!.9/M0W1I)8#X!)8#Y!)8#Z!/!D9MMO9PQLIJGKHR!.M/S0T)8#U!.9/:0;)8#V!.9/M0W1I)8#X!)8#Y!)8#Z!1!D;MMO9PQLIJGKHR!.M/S0T)8#U!.9/:0;)8#V!.9/M0W1I)8#X!)8#Y!)8#Z!)8##)9##0!D:MMO9PQLIJGKHR!.M/S0T)8#U!.9/:0;)8#V!.9/M0W1I)8#X!)8#Y!)8#Z!)8##)9##";
 
    it('Deve comprimir um objeto Flatted', () => {
       const result = compress(FLATTED);

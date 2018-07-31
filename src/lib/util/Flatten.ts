@@ -40,7 +40,8 @@ export function flatten(obj: any): any {
             // Array por índice mesmo
             out[index] = item;
          } else if (type === 'object') {
-            let id = item._id || item.id || item._key || item.key;
+            
+            let id = item.$id || item._id || item.id || item._key || item.key;
             if (id === undefined || id === null) {
                //Essa implementação espera que todos os itens de um array possua id, _id, key ou _key.
                throw new Error('É necessário que todos os itens de um Array de Objetos tenham identificador (id, _id, key ou _key)');
