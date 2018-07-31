@@ -5,5 +5,5 @@ export { default as ClientStorageCached } from './lib/storage/ClientStorageCache
 export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemory';
 export { default as ClientStorageReactNative } from './lib/storage/ClientStorageReactNative';
 
-export { compress, decompress } from './lib/util/Compact';
+export { compress, decompress } from './lib/util/Compress';
 export { flatten, unflatten } from './lib/util/Flatten';

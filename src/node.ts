@@ -15,7 +15,7 @@ export { default as Publishers, QueryConfig, Config } from './lib/Publishers';
 
 export { default as Topic, TopicState, TopicResponse, TopicSubscriber } from './lib/Topic';
 
-export { compress, decompress } from './lib/util/Compact';
+export { compress, decompress } from './lib/util/Compress';
 
 export { flatten, unflatten } from './lib/util/Flatten';
 

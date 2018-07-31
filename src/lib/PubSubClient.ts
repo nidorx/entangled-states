@@ -1,7 +1,7 @@
 import DiffPatch from "dffptch";
 import { unflatten } from "./util/Flatten";
 import { ActionResponse, SyncTopicParams } from "./Constants";
-import { decompress, compress } from "./util/Compact";
+import { decompress, compress } from "./util/Compress";
 import ClientStorage from "./storage/ClientStorage";
 
 /**

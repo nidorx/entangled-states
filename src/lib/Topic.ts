@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import DiffPatch from 'dffptch';
 import { flatten } from './util/Flatten';
 import { Datastore } from './Constants';
-import { decompress, compress } from './util/Compact';
+import { decompress, compress } from './util/Compress';
 
 /**
  * Tenta enviar para os clientes que não responderam neste intervalo
