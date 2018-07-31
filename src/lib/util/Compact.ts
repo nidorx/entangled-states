@@ -224,5 +224,6 @@ export function decompress(compressed: string) {
    if (json.charAt(json.length - 1) === ',') {
       json = json.slice(0, -1);
    }
+   console.log('json', json);
    return JSON.parse(json);
 }
