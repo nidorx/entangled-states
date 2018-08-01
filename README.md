@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/nidorx/websocket-pubsub.svg?branch=master)](https://travis-ci.org/nidorx/websocket-pubsub)
 
 
-Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade 
+Solução de PubSub & RPC usando WebSocket e node.js 
 
 <div align="center">
     <img
