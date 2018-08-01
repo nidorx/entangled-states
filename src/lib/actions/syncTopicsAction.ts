@@ -2,6 +2,7 @@
 import Topic from "../Topic";
 import Actions from "../Actions";
 import { SyncTopicParams } from "../Constants";
+import Publishers from "../Publishers";
 
 /**
  * Atualiza os registro do ws nos tópicos informados. 
@@ -23,6 +24,10 @@ Actions.register('syncTopics', (data: Array<SyncTopicParams>, ws, accept) => {
       if (info) {
          // Atualiza o cliente no tópico
          topic.subscribe(ws, info.seq);
+
+         // Solicita a publicação no tópico, para garantir que o usuário já receba a versão mais recente
+         const parts = info.topic.split('#');
+         Publishers.publish(parts[0], parts[1]);
       } else {
          // Cliente não está mais nessa lista
          topic.unsubscribe(ws);

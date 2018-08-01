@@ -1,6 +1,6 @@
 import { ActionResponse, SyncTopicParams } from "./Constants";
 import ClientStorage from "./storage/ClientStorage";
-import DTO, { Delta } from "./util/DTO";
+import DTO from "./util/DTO";
 
 /**
  * Mensagens provenientes do servidor
@@ -76,7 +76,7 @@ interface SubscriptionState {
  * 
  * Implementa um mecanismo de sincronização com o servidor, informando ao mesmo sobre a ultima versão recebida de cada tópico
  */
-export default class PubSubClient {
+export default class Client {
 
    /**
     * Identificador das requisições feitas ao servidor
@@ -130,7 +130,7 @@ export default class PubSubClient {
    /**
     * Inicializa a conexão do DataLayer com o Backend
     */
-   connect() {
+   connect(callback?: (err?: any) => void) {
       if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
          return;
       }
@@ -141,6 +141,9 @@ export default class PubSubClient {
          if (this.ws) {
             // connection opened
             this.syncTopics();
+            if (callback) {
+               callback();
+            }
          }
       };
 
@@ -154,32 +157,30 @@ export default class PubSubClient {
             return;
          }
 
-         if ((data as ActionResponse).requestId) {
+         if ((data as ActionResponse).id) {
             // Resposta de uma ação
             data = (data as ActionResponse);
 
             // Está respondendo a uma solicitação
-            if (!this.promises[data.requestId]) {
+            if (!this.promises[data.id]) {
                // Promise já foi resolvido
                return;
             }
 
             // Resolve o promise
             if (data.error) {
-               this.promises[data.requestId].reject(data.error);
+               this.promises[data.id].reject(data.error);
             } else {
-               this.promises[data.requestId].accept(data.data);
+               this.promises[data.id].accept(data.data);
             }
 
             // Remove a referencia para o promise
-            delete this.promises[data.requestId];
+            delete this.promises[data.id];
 
          } else if ((data as TopicResponse).topic) {
             // Mensagem de um tópico
             const message = (data as TopicResponse);
             const subscription = this.subscriptions[message.topic];
-
-            // console.log('msg', message.topic, e.data);
 
             if (!subscription) {
                // Atualiza o servidor com as informações sobre os tópicos que este deseja ouvir
@@ -223,7 +224,6 @@ export default class PubSubClient {
             if (update) {
                subscription.data = (subscription.dto as DTO).unflatten();;
 
-               // console.log('msg', message.topic, data);
                // Entrega mensagem aos interessados
                subscription.callbacks.forEach((callback: (data: any) => void) => {
                   // callback(data);
@@ -247,7 +247,7 @@ export default class PubSubClient {
 
       this.ws.onerror = (e) => {
          // an error occurred
-         console.log(e);
+         // console.error(e.message);
       };
 
       this.ws.onclose = (e) => {
@@ -337,7 +337,7 @@ export default class PubSubClient {
     */
    exec(action: string, data: any): Promise<any> {
 
-      const requestId = `${PubSubClient.REQUEST_SEQUENCE.id++}`;
+      const requestId = `${Client.REQUEST_SEQUENCE.id++}`;
       const promise = new Promise<any>((accept, reject) => {
          if (this.ws) {
 
@@ -385,7 +385,7 @@ export default class PubSubClient {
             } as SyncTopicParams;
          })
          .filter(item => item !== undefined);
-
+      
       this.exec('syncTopics', data)
          .then(() => { })
          .catch(() => { });

@@ -4,7 +4,7 @@ import DTO, {
    ErrorOnlyObjectOrArrayAccepted,
    ErrorDecompressAcceptOnlyStrings,
    ErrorArrayMultidimensionalNotAccepted
-} from './../src/lib/util/DTO';
+} from './../../src/lib/util/DTO';
 // import fs from 'fs';
 
 describe('DTO', () => {

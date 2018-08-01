@@ -22,6 +22,10 @@ export interface ActionRequest {
  */
 export interface ActionResponse {
    /**
+    * Permite mapear resposta a requisições
+    */
+   id: string;
+   /**
     * Corpo da mensagem
     */
    data?: any;
@@ -30,9 +34,10 @@ export interface ActionResponse {
     */
    error?: string;
    /**
-    * Permite mapear resposta a requisições
+    * Stacktrace do erro
     */
-   requestId: string;
+   stack?: string;
+
 }
 
 /**

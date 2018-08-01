@@ -207,8 +207,6 @@ class Publishers {
 
          changeQueryIdValue(query, id);
 
-         // console.log('Executando query', query);
-
          if (config.singleResult) {
             store.findOne(query, projection, (err, doc: any) => {
                if (err) {

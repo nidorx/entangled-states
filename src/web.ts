@@ -1,5 +1,5 @@
 
-export { default as PubSubClient } from './lib/PubSubClient';
+export { default as Client } from './lib/Client';
 
 export { default as ClientStorage } from './lib/storage/ClientStorage';
 export { default as ClientStorageCached } from './lib/storage/ClientStorageCached';

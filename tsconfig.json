@@ -32,7 +32,7 @@
    "exclude": [
       "jest",
       "node_modules",
-      "__tests__",
+      "tests",
       "dist",
       "example",
       "doc"
