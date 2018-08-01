@@ -15,9 +15,18 @@ export { default as Publishers, QueryConfig, Config } from './lib/Publishers';
 
 export { default as Topic, TopicState, TopicResponse, TopicSubscriber } from './lib/Topic';
 
-export { compress, decompress } from './lib/util/Compress';
-
-export { flatten, unflatten } from './lib/util/Flatten';
+export {
+   default as DTO,
+   Delta,
+   DeltaObject,
+   ErrorIdRequired,
+   ErrorArrayMixedNotAccepted,
+   ErrorDeltaCompressHasNoDiff,
+   ErrorDeltaBadInitialization,
+   ErrorOnlyObjectOrArrayAccepted,
+   ErrorDecompressAcceptOnlyStrings,
+   ErrorArrayMultidimensionalNotAccepted
+} from './lib/util/DTO';
 
 // Import default actions
 import './lib/actions/syncTopicAction';

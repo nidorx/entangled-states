@@ -7,6 +7,15 @@ export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemor
 export { default as ClientStorageWebLocal } from './lib/storage/ClientStorageWebLocal';
 export { default as ClientStorageWebSession } from './lib/storage/ClientStorageWebSession';
 
-export { compress, decompress } from './lib/util/Compress';
-
-export { flatten, unflatten } from './lib/util/Flatten';
+export {
+   default as DTO,
+   Delta,
+   DeltaObject,
+   ErrorIdRequired,
+   ErrorArrayMixedNotAccepted,
+   ErrorDeltaCompressHasNoDiff,
+   ErrorDeltaBadInitialization,
+   ErrorOnlyObjectOrArrayAccepted,
+   ErrorDecompressAcceptOnlyStrings,
+   ErrorArrayMultidimensionalNotAccepted
+} from './lib/util/DTO';

@@ -1,8 +1,6 @@
 import * as WebSocket from 'ws';
-import DiffPatch from 'dffptch';
-import { flatten } from './util/Flatten';
 import { Datastore } from './Constants';
-import { decompress, compress } from './util/Compress';
+import DTO from './util/DTO';
 
 /**
  * Tenta enviar para os clientes que não responderam neste intervalo
@@ -29,13 +27,13 @@ export interface TopicResponse {
    /**
    * Corpo da mensagem, quando enviado todo o conteúdo para o cliente
    * 
-   * FLATTEN COMPRESSED
+   * DTO::compress()
    */
    data?: any;
    /**
    * Diff, quando o cliente já possui dados atualizados (3 ultimas atualizações), envia apenas um patch, que será aplicado pelo cliente
    * 
-   * FLATTEN COMPRESSED
+   * Delta::compress()
    */
    delta?: any;
    /**
@@ -77,13 +75,13 @@ export interface TopicData {
    /**
     * Mensagem original deste sequencial
     * 
-    * FLATTEN
+    * DTO
     */
-   dataFlatten?: any;
+   dto?: DTO;
    /**
     * Mensagem original deste sequencial comprimido, é persistido na base de dados e também é recuperado durante o carregamento
     * 
-    * FLATTEN COMPRESSED
+    * DTO::compress()
     */
    dataCompressed: string;
 }
@@ -95,7 +93,7 @@ export interface TopicDelta extends TopicData {
    /**
     * Diferença entre o estado atual dos dados e o estado da mensagem deste delta
     * 
-    * FLATTEN COMPRESSED
+    * Delta::compress()
     */
    diffCompressed: string;
 }
@@ -204,7 +202,7 @@ export default class Topic {
    private state: TopicState = {
       name: this.getName(),
       seq: 0,
-      dataFlatten: undefined,
+      dto: undefined,
       dataCompressed: '',
       deltas: []
    };
@@ -264,32 +262,18 @@ export default class Topic {
       // Garante que não possui nova mensagen na fila
       this.next = undefined;
 
-      let flattenData = flatten(newData);
-      if (flattenData === undefined || flattenData === null) {
-         if (Array.isArray(newData)) {
-            flattenData = { '@': 1 };
-         } else {
-            flattenData = {};
-         }
-      }
-
-      if (!Array.isArray(flattenData) && typeof flattenData !== 'object') {
-         // Tópicos só trabalham com Array ou objetos
-         // @TODO: Tratar remoção de itens
-         this.isSending = false;
-         return;
-      }
+      let flattenData = new DTO(newData);
 
       // Novo estado do tópico
       const newState: TopicState = {
          name: this.getName(),
          seq: -1,
-         dataFlatten: flattenData,
-         dataCompressed: compress(flattenData),
+         dto: flattenData,
+         dataCompressed: flattenData.compress(),
          deltas: []
       }
 
-      if (this.state.dataFlatten) {
+      if (this.state.dto) {
          // Já possui uma mensagem atual
          // Verifica se tem alterações
 
@@ -297,20 +281,20 @@ export default class Topic {
          // Algoritmo de Compactação dos Dados
          // Garantir o transporte apenas do essencial
          // ==================================================================
-         //  1 - Flatten (arrays por id)
+         //  1 - DTO (arrays por id)
          //  2 - Diff do flatten (geração do delta)
          //  3 - Compressão
          // ==================================================================
 
-         let delta = DiffPatch.diff(this.state.dataFlatten, newState.dataFlatten);
-         if (Object.keys(delta).length === 0) {
+         let delta = this.state.dto.diff(newState.dto as DTO);
+         if (!delta.hasDiff()) {
             // Não possui alterações, ignora o versionamento e envio
             this.isSending = false;
             return;
          }
 
          // Garante imutabilidade do registro
-         newState.deltas = JSON.parse(JSON.stringify(this.state.deltas));
+         newState.deltas = this.state.deltas.slice(0);
 
          // Ordena os deltas, os mais recentes no inicio (Os mais antigos vão ser removidos)
          newState.deltas.sort((a, b) => b.seq - a.seq);
@@ -320,15 +304,15 @@ export default class Topic {
 
          // Calcula os novos deltas
          newState.deltas.forEach(delta => {
-            delta.diffCompressed = compress(DiffPatch.diff(delta.dataFlatten, newState.dataFlatten));
+            delta.diffCompressed = (delta.dto as DTO).diff(newState.dto as DTO).compress();
          });
 
          // Insere o novo diff no inicio
          newState.deltas.push({
             seq: this.state.seq,
-            dataFlatten: this.state.dataFlatten,
+            dto: this.state.dto,
             dataCompressed: this.state.dataCompressed,
-            diffCompressed: compress(delta)
+            diffCompressed: delta.compress()
          });
       }
 
@@ -519,12 +503,12 @@ export default class Topic {
                   // Extrai os dados comprimidos da base
                   this.SEQ = document.seq;
                   this.state.seq = document.seq;
-                  this.state.dataFlatten = decompress(document.dataCompressed);
+                  this.state.dto = DTO.decompress(document.dataCompressed);
                   this.state.dataCompressed = document.dataCompressed;
                   this.state.deltas = document.deltas.map(delta => {
                      return {
                         seq: delta.seq,
-                        dataFlatten: decompress(delta.dataCompressed),
+                        dataFlatten: DTO.decompress(delta.dataCompressed),
                         dataCompressed: delta.dataCompressed,
                         diffCompressed: delta.diffCompressed
                      }

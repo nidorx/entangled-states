@@ -5,5 +5,15 @@ export { default as ClientStorageCached } from './lib/storage/ClientStorageCache
 export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemory';
 export { default as ClientStorageReactNative } from './lib/storage/ClientStorageReactNative';
 
-export { compress, decompress } from './lib/util/Compress';
-export { flatten, unflatten } from './lib/util/Flatten';
+export {
+   default as DTO,
+   Delta,
+   DeltaObject,
+   ErrorIdRequired,
+   ErrorArrayMixedNotAccepted,
+   ErrorDeltaCompressHasNoDiff,
+   ErrorDeltaBadInitialization,
+   ErrorOnlyObjectOrArrayAccepted,
+   ErrorDecompressAcceptOnlyStrings,
+   ErrorArrayMultidimensionalNotAccepted
+} from './lib/util/DTO';

@@ -1,8 +1,6 @@
-import DiffPatch from "dffptch";
-import { unflatten } from "./util/Flatten";
 import { ActionResponse, SyncTopicParams } from "./Constants";
-import { decompress, compress } from "./util/Compress";
 import ClientStorage from "./storage/ClientStorage";
+import DTO, { Delta } from "./util/DTO";
 
 /**
  * Mensagens provenientes do servidor
@@ -19,11 +17,11 @@ interface TopicResponse {
    /**
    * Corpo da mensagem, quando enviado todo o conteúdo para o cliente
    */
-   data?: any;
+   data?: string;
    /**
    * Diff, quando o cliente já possui dados atualizados (3 ultimas atualizações), envia apenas um patch, que será aplicado pelo cliente
    */
-   delta?: any;
+   delta?: string;
    /**
     * ID da mensagem que gerou o diff
     */
@@ -63,7 +61,7 @@ interface SubscriptionState {
    /**
     * Dados da mensagem, FLAT. Formato persistido e proveniente do servidor (incluido deltas)
     */
-   flatData?: any;
+   dto?: DTO;
 
    /**
     * 
@@ -201,7 +199,7 @@ export default class PubSubClient {
             // Algoritmo de Compactação dos Dados
             // Garantir o transporte apenas do essencial
             // ==================================================================
-            //  1 - Flatten (arrays por id)
+            //  1 - DTO (arrays por id)
             //  2 - Diff do flatten (geração do delta)
             //  3 - Compressão 
             // ==================================================================
@@ -210,7 +208,7 @@ export default class PubSubClient {
                   // É o diff correto
                   update = true;
                   subscription.seq = message.seq;
-                  DiffPatch.patch(subscription.flatData, decompress(message.delta));
+                  subscription.dto = (subscription.dto as DTO).patchCompressed(message.delta);
                } else {
                   // Delta inválido, pode ser mensagem atrasada
                   this.syncTopic(message.topic);
@@ -219,11 +217,11 @@ export default class PubSubClient {
                // Mensagem completa
                update = true;
                subscription.seq = message.seq;
-               subscription.flatData = decompress(message.data);
+               subscription.dto = DTO.decompress(message.data as string);
             }
 
             if (update) {
-               subscription.data = unflatten(subscription.flatData);
+               subscription.data = (subscription.dto as DTO).unflatten();;
 
                // console.log('msg', message.topic, data);
                // Entrega mensagem aos interessados
@@ -240,7 +238,7 @@ export default class PubSubClient {
                setTimeout(() => {
                   this.storage.set(`topic_${message.topic}`, {
                      seq: subscription.seq,
-                     compressed: compress(subscription.flatData),
+                     compressed: (subscription.dto as DTO).compress(),
                   } as SubscriptionStorage);
                }, 0);
             }
@@ -297,8 +295,8 @@ export default class PubSubClient {
                   const subscription = this.subscriptions[topic];
 
                   subscription.seq = storageTopic.seq;
-                  subscription.flatData = decompress(storageTopic.compressed);
-                  subscription.data = unflatten(subscription.flatData);
+                  subscription.dto = DTO.decompress(storageTopic.compressed);
+                  subscription.data = subscription.dto.unflatten();
 
                   callback(this.subscriptions[topic].data);
                }

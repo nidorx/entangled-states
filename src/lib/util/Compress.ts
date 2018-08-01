@@ -7,8 +7,7 @@
 const PRIMITIVES = {
    'true': true,
    'false': false,
-   'null': null as any,
-   'undefined': undefined
+   'null': null as any
 };
 
 /**
@@ -21,13 +20,13 @@ const DEFAULT_KEYS: Array<any> = [
    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
    '$id', '_id', 'id', 'key', '_key',
-   true, false, null, undefined,
-   'true', 'false', 'null', 'undefined'
+   true, false, null,
+   'true', 'false', 'null'
 ];
 
 const SPACE = fromIndex(DEFAULT_KEYS.indexOf(' '));
-const OBJECT_OPEN = String.fromCharCode(DEFAULT_KEYS.indexOf('{'));
-const OBJECT_CLOSE = String.fromCharCode(DEFAULT_KEYS.indexOf('}'));
+const OBJECT_OPEN = fromIndex(DEFAULT_KEYS.indexOf('{'));
+const OBJECT_CLOSE = fromIndex(DEFAULT_KEYS.indexOf('}'));
 
 /**
  * Obtém o caractere que representa o índice informado
@@ -66,7 +65,7 @@ function toIndex(str: string) {
 /**
  * Compactação do objeto para transporte
  * 
- * O objeto precisa ter sido tratado com o Flatten
+ * O objeto precisa ter sido tratado com o DTO::flatten
  * 
  * @param flatObj 
  */
@@ -91,7 +90,7 @@ export function compress(flatObj: any) {
             markedAsString.push(fromIndex(output.length));
          } else if (value.match(/^[-+]?[\d.,]+$/)) {
             markedAsString.push(fromIndex(output.length));
-         } else if (['true', 'false', 'null', 'undefined'].indexOf(value) >= 0) {
+         } else if (['true', 'false', 'null'].indexOf(value) >= 0) {
             markedAsString.push(fromIndex(output.length));
          }
       }
@@ -117,7 +116,7 @@ export function compress(flatObj: any) {
                output += SPACE;
             }
          });
-      } else if (type === 'number' || type === 'boolean' || type === 'symbol' || type === 'undefined' || obj === null) {
+      } else if (type === 'number' || type === 'boolean' || type === 'symbol' || obj === null) {
          let keyIdx = keys.indexOf(obj);
          if (keyIdx < 0) {
             keyIdx = keys.push(obj) - 1;
@@ -126,7 +125,7 @@ export function compress(flatObj: any) {
          output += fromIndex(keyIdx);
       } else if (Array.isArray(obj)) {
 
-         throw new Error('Array não é permitido. Objeto deve ser tratado com o Flatten antes de acionar esse método.');
+         throw new Error('Array não é permitido. Objeto deve ser tratado com o DTO.flatten() antes de acionar esse método.');
 
       } else if (typeof obj === 'object') {
 
@@ -197,8 +196,7 @@ export function decompress(compressed: string) {
    let value;
    let indexStart = 0;
    let indexReal;
-   let isKey = true;
-   let isArray = false;
+   let isKey = false;
 
    var json = '';
    var markedAsString = [];
@@ -224,6 +222,7 @@ export function decompress(compressed: string) {
 
          // INDEXES
          if (step === 3) {
+            index++;
             indexStart = index;
             // Loop interno para o passo 3, evita os IF's acima 
             for (; index < l; index++) {
@@ -238,8 +237,7 @@ export function decompress(compressed: string) {
                if (char === OBJECT_CLOSE) {
                   // js.substring , 
                   json = json.slice(0, -1) + '},';
-                  const next = compressed.charAt(index + 1);
-                  isKey = next !== OBJECT_CLOSE;
+                  isKey = compressed.charAt(index + 1) !== OBJECT_CLOSE;
                   continue;
                }
 
@@ -254,7 +252,7 @@ export function decompress(compressed: string) {
                         value = Number.parseInt(value);
                      } else if (value.match(/^[-+]?[\d.,]+$/)) {
                         value = Number.parseFloat(value);
-                     } else if (['true', 'false', 'null', 'undefined'].indexOf(value) >= 0) {
+                     } else if (['true', 'false', 'null'].indexOf(value) >= 0) {
                         value = (PRIMITIVES as any)[value];
                      } else {
                         value = '"' + value + '"';
