@@ -26,74 +26,57 @@ export default class InMemoryRepository<T> extends Repository<(T & AnyObject)> {
       return true;
    }
 
-   find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<T & AnyObject>) => void) {
-      const rows = this.ROWS.filter(this.match.bind(this, criteria));
-      callback(undefined, rows);
+   find(criteria: AnyObject, options: AnyObject): Promise<Array<T & AnyObject>> {
+      return new Promise<Array<T>>((accept, reject) => {
+         const rows = this.ROWS.filter(this.match.bind(this, criteria));
+         accept(rows);
+      });
    };
 
-   count(criteria: AnyObject, options: AnyObject, callback: (err?: Error, total?: number) => void): void {
-      const rows = this.ROWS.filter(this.match.bind(this, criteria));
-      callback(undefined, rows.length);
+   count(criteria: AnyObject, options: AnyObject): Promise<number> {
+      return new Promise<number>((accept, reject) => {
+         const rows = this.ROWS.filter(this.match.bind(this, criteria));
+         accept(rows.length);
+      });
    }
 
-   findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: (T & AnyObject)) => void) {
-      const row = this.ROWS.find(this.match.bind(this, criteria));
-      callback(undefined, row);
+   findOne(criteria: AnyObject, options: AnyObject): Promise<T & AnyObject> {
+      return new Promise<T>((accept, reject) => {
+         const row = this.ROWS.find(this.match.bind(this, criteria));
+         accept(row);
+      });
    };
 
-   update(criteria: AnyObject, data: Partial<T & AnyObject>, options?: AnyObject, callback?: ((err?: Error, updated?: number) => void) | undefined) {
-      this.find(criteria, {}, (err, rows) => {
-         if (err) {
-            if (callback) {
-               callback(err);
-            }
-            return;
-         }
+   insert(data: Partial<T & AnyObject>): Promise<T & AnyObject> {
+      return new Promise<T>((accept, reject) => {
+         data._id = this.SEQUENCE++;
+         this.ROWS.push(data as (T & AnyObject));
+         accept(data as (T & AnyObject));
+      });
+   }
 
-         if (rows) {
-            rows.forEach(row => {
-               for (var attr in data) {
-                  if (!data.hasOwnProperty(attr)) {
-                     continue;
-                  }
-
-                  row[attr] = data[attr];
+   async update(criteria: AnyObject, data: Partial<T & AnyObject>, options?: AnyObject): Promise<number> {
+      const rows = await this.find(criteria, {});
+      if (rows) {
+         rows.forEach(row => {
+            for (var attr in data) {
+               if (!data.hasOwnProperty(attr)) {
+                  continue;
                }
-            });
-         }
-
-         if (callback) {
-            const numberOfUpdated = (rows || []).length;
-            callback(undefined, numberOfUpdated);
-         }
-      });
+               row[attr] = data[attr];
+            }
+         });
+      }
+      return (rows || []).length;
    };
 
-   insert(data: Partial<T & AnyObject>, callback: (err?: Error, row?: AnyObject) => void) {
-      data._id = this.SEQUENCE++;
-      this.ROWS.push(data as (T & AnyObject));
-      callback(undefined, data);
-   }
-
-   remove(criteria: AnyObject, options: AnyObject, callback: (err?: Error, removed?: number) => void) {
-      this.find(criteria, {}, (err, rows) => {
-         if (err) {
-            if (callback) {
-               callback(err);
-            }
-            return;
-         }
-
-         if (rows) {
-            rows.forEach(row => {
-               this.ROWS.splice(this.ROWS.indexOf(row), 1);
-            });
-         }
-
-         if (callback) {
-            const numberOfRemoved = (rows || []).length;
-            callback(undefined, numberOfRemoved);
-         }
-      });
+   async remove(criteria: AnyObject, options: AnyObject): Promise<number> {
+      const rows = await this.find(criteria, {});
+      if (rows) {
+         rows.forEach(row => {
+            this.ROWS.splice(this.ROWS.indexOf(row), 1);
+         });
+      }
+      return (rows || []).length;
    }
 }

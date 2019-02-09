@@ -14,7 +14,7 @@ export interface QueryConfig {
    /**
    * Banco de dados que possui a informação
    */
-   store: Repository<any>;
+   repository: Repository<any>;
    /**
     * Os parametros de consulta no store
     *
@@ -211,7 +211,7 @@ class Publishers {
    */
    private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<AnyObject>> {
 
-      const store = config.store;
+      const repository = config.repository;
       const params = { ...(config.params || {}) };
       const options = { ...(config.options || {}) };
       const filter = config.filter;
@@ -224,55 +224,52 @@ class Publishers {
          changeQueryIdValue(params, id);
 
          if (config.singleResult) {
-            store.findOne(params, options, (err, doc) => {
-               if (err) {
-                  return reject(err);
-               }
+            repository.findOne(params, options)
+               .then((doc) => {
 
-               if (map && doc !== undefined) {
-                  doc = map(doc, 0, [doc], prevResults);
-               }
+                  if (map && doc !== undefined) {
+                     doc = map(doc, 0, [doc], prevResults);
+                  }
 
-               if (extract && doc !== undefined) {
-                  doc = extract([doc], prevResults);
-               }
+                  if (extract && doc !== undefined) {
+                     doc = extract([doc], prevResults);
+                  }
 
-               accept(doc !== undefined ? [doc] : []);
-            });
+                  accept(doc !== undefined ? [doc] : []);
+               })
+               .catch(reject);
 
          } else {
 
-            store.find(params, options, (err, docs) => {
-               if (err) {
-                  return reject(err);
-               }
+            repository.find(params, options)
+               .then((docs) => {
+                  if (docs) {
+                     if (filter) {
+                        docs = docs.filter((value, index, array) => {
+                           return filter(value, index, array, prevResults);
+                        });
+                     }
 
-               if (docs) {
-                  if (filter) {
-                     docs = docs.filter((value, index, array) => {
-                        return filter(value, index, array, prevResults);
-                     });
+                     if (forEach) {
+                        docs.forEach((value, index, array) => {
+                           forEach(value, index, array, prevResults);
+                        });
+                     }
+
+                     if (map) {
+                        docs = docs.map((value, index, array) => {
+                           return map(value, index, array, prevResults);
+                        });
+                     }
+
+                     if (extract) {
+                        docs = [extract(docs, prevResults)];
+                     }
                   }
 
-                  if (forEach) {
-                     docs.forEach((value, index, array) => {
-                        forEach(value, index, array, prevResults);
-                     });
-                  }
-
-                  if (map) {
-                     docs = docs.map((value, index, array) => {
-                        return map(value, index, array, prevResults);
-                     });
-                  }
-
-                  if (extract) {
-                     docs = [extract(docs, prevResults)];
-                  }
-               }
-
-               accept(docs || []);
-            });
+                  accept(docs || []);
+               })
+               .catch(reject);
          }
       });
    }

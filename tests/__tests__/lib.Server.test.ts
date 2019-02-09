@@ -86,7 +86,7 @@ describe('Server', () => {
          idRequired: false,
          query: [
             {
-               store: DB_GROUPS,
+               repository: DB_GROUPS,
                singleResult: false,
                params: {},
             }
@@ -99,7 +99,7 @@ describe('Server', () => {
          idRequired: true,
          query: [
             {
-               store: DB_GROUPS,
+               repository: DB_GROUPS,
                singleResult: true,
                params: { _id: '$id' },
             }
@@ -112,7 +112,7 @@ describe('Server', () => {
          idRequired: true,
          query: [
             {
-               store: DB_USERS,
+               repository: DB_USERS,
                singleResult: false,
                params: { groupId: '$id' },
             }
@@ -124,7 +124,7 @@ describe('Server', () => {
          idRequired: true,
          query: [
             {
-               store: DB_USERS,
+               repository: DB_USERS,
                singleResult: true,
                params: { _id: '$id' },
             }
@@ -135,79 +135,73 @@ describe('Server', () => {
       // Actions (CRUD)
       //-------------------------------------------------------------
       Actions.register('createGroup', (data: any, ws, accept, reject) => {
-         DB_GROUPS.insert(data, (err, row: any) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_GROUPS.insert(data)
+            .then((row) => {
 
-            accept(row._id);
+               accept(row._id);
 
-            Publishers.publish('groups');
-         })
+               Publishers.publish('groups');
+            })
+            .catch(reject);
       });
 
       Actions.register('updateGroup', (data: any, ws, accept, reject) => {
-         DB_GROUPS.update({ _id: data._id }, { $set: data }, {}, (err) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_GROUPS.update({ _id: data._id }, { $set: data }, {})
+            .then((updated) => {
 
-            accept();
+               accept();
 
-            Publishers.publish('groups');
-            Publishers.publish('groupById', data._id);
-         })
+               Publishers.publish('groups');
+               Publishers.publish('groupById', data._id);
+            })
+            .catch(reject);
       });
 
       Actions.register('deleteGroup', (data: any, ws, accept, reject) => {
-         DB_GROUPS.remove({ _id: data._id }, {}, (err) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_GROUPS.remove({ _id: data._id }, {})
+            .then((removed) => {
 
-            accept();
+               accept();
 
-            Publishers.publish('groups');
-            Publishers.publish('groupById', data._id);
-         })
+               Publishers.publish('groups');
+               Publishers.publish('groupById', data._id);
+            })
+            .catch(reject);
       });
 
       Actions.register('createUser', (data: any, ws, accept, reject) => {
-         DB_USERS.insert(data, (err, row: any) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_USERS.insert(data)
+            .then((row) => {
 
-            accept(row._id);
+               accept(row._id);
 
-            Publishers.publish('users', data.groupId);
-         })
+               Publishers.publish('users', data.groupId);
+            })
+            .catch(reject);
       });
 
       Actions.register('updateUser', (data: any, ws, accept, reject) => {
-         DB_USERS.update({ _id: data._id }, { $set: data }, {}, (err) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_USERS.update({ _id: data._id }, { $set: data }, {})
+            .then((updated) => {
 
-            accept();
+               accept();
 
-            Publishers.publish('users', data.groupId);
-            Publishers.publish('userById', data._id);
-         })
+               Publishers.publish('users', data.groupId);
+               Publishers.publish('userById', data._id);
+            })
+            .catch(reject);
       });
 
       Actions.register('deleteUser', (data: any, ws, accept, reject) => {
-         DB_USERS.remove({ _id: data._id }, {}, (err) => {
-            if (err) {
-               return reject(err);
-            }
+         DB_USERS.remove({ _id: data._id }, {})
+            .then((removed) => {
 
-            accept();
+               accept();
 
-            Publishers.publish('groups');
-            Publishers.publish('groupById', data._id);
-         })
+               Publishers.publish('groups');
+               Publishers.publish('groupById', data._id);
+            })
+            .catch(reject);
       });
 
       //initialize the PubSub server instance

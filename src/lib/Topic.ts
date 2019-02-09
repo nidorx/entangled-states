@@ -132,13 +132,13 @@ export default class Topic {
    /**
     * Permite persistir e recuperar o estado das mensagens do tópico da base de dados
     */
-   static storage?: Repository<any>;
+   static repository?: Repository<any>;
 
    /**
     * Define o mecanismo de backup e restauração do tópico
     */
    static setStorage = (storage: Repository<any>) => {
-      Topic.storage = storage;
+      Topic.repository = storage;
    }
 
    /**
@@ -232,7 +232,7 @@ export default class Topic {
       this.name = name;
 
       // Já inicia o carregamento do estado atual do tópico
-      this.loadFromDB();
+      this.loadFromStorage();
 
       // Registra na lista de tópicos o item atual
       Topic.ALL.push(this);
@@ -478,7 +478,7 @@ export default class Topic {
    /**
     * Obtém da base de dados o estado inicial do Topic
     */
-   private loadFromDB() {
+   private loadFromStorage() {
       if (this.isLoading) {
          return;
       }
@@ -488,40 +488,39 @@ export default class Topic {
       let retries = 1;
       const tryToLoad = () => {
 
-         if (Topic.storage) {
-            Topic.storage.findOne({ name: this.getName() }, {}, (err?, row?) => {
-               if (err) {
+         if (Topic.repository) {
+            Topic.repository.findOne({ name: this.getName() }, {})
+               .then((row) => {
+                  // Marca como carregamento concluído
+                  this.isLoading = false;
+
+                  if (row) {
+                     let state: TopicState = row as TopicState;
+                     // Extrai os dados comprimidos da base
+                     this.SEQ = state.seq;
+                     this.state.seq = state.seq;
+                     this.state.dto = DTO.decompress(state.dataCompressed);
+                     this.state.dataCompressed = state.dataCompressed;
+                     this.state.deltas = state.deltas.map(delta => {
+                        return {
+                           seq: delta.seq,
+                           dataFlatten: DTO.decompress(delta.dataCompressed),
+                           dataCompressed: delta.dataCompressed,
+                           diffCompressed: delta.diffCompressed
+                        }
+                     });
+                  }
+
+                  // Verifica se já possui novas mensagens a enviar
+                  if (this.next) {
+                     // Possui novos dados para enviar
+                     this.send(this.next);
+                  }
+               })
+               .catch(err => {
                   console.error(`Erro durante o carregamento do tópico ${this.getName()}, ${retries}a tentativa`, err);
                   setTimeout(tryToLoad, 10);
-                  return;
-               }
-
-               // Marca como carregamento concluído
-               this.isLoading = false;
-
-               if (row) {
-                  let state: TopicState = row as TopicState;
-                  // Extrai os dados comprimidos da base
-                  this.SEQ = state.seq;
-                  this.state.seq = state.seq;
-                  this.state.dto = DTO.decompress(state.dataCompressed);
-                  this.state.dataCompressed = state.dataCompressed;
-                  this.state.deltas = state.deltas.map(delta => {
-                     return {
-                        seq: delta.seq,
-                        dataFlatten: DTO.decompress(delta.dataCompressed),
-                        dataCompressed: delta.dataCompressed,
-                        diffCompressed: delta.diffCompressed
-                     }
-                  });
-               }
-
-               // Verifica se já possui novas mensagens a enviar
-               if (this.next) {
-                  // Possui novos dados para enviar
-                  this.send(this.next);
-               }
-            });
+               });
          } else {
             // Marca como carregamento concluído
             this.isLoading = false;
@@ -542,23 +541,33 @@ export default class Topic {
          let retries = 1;
          const tryToPersist = () => {
 
-            // Salva apenas dados comprimidos na base
-            const dados: TopicState = {
-               name: this.getName(),
-               seq: newState.seq,
-               dataCompressed: newState.dataCompressed,
-               deltas: newState.deltas.map(delta => {
-                  return {
-                     seq: delta.seq,
-                     dataCompressed: delta.dataCompressed,
-                     diffCompressed: delta.diffCompressed
-                  }
-               }),
-            };
+            if (Topic.repository) {
+               let repository = Topic.repository;
 
-            if (Topic.storage) {
-               Topic.storage.update({ name: this.getName() }, { $set: dados }, { upsert: true }, (err) => {
-                  if (err) {
+               // Salva apenas dados comprimidos na base
+               const dados: TopicState = {
+                  name: this.getName(),
+                  seq: newState.seq,
+                  dataCompressed: newState.dataCompressed,
+                  deltas: newState.deltas.map(delta => {
+                     return {
+                        seq: delta.seq,
+                        dataCompressed: delta.dataCompressed,
+                        diffCompressed: delta.diffCompressed
+                     }
+                  }),
+               };
+
+               repository.count({ name: this.getName() }, {})
+                  .then(count => {
+                     if (count === 0) {
+                        return repository.insert({ name: this.getName() }, dados);
+                     } else {
+                        return repository.update({ name: this.getName() }, dados, {});
+                     }
+                  })
+                  .then(accept)
+                  .catch(err => {
                      console.error(`Erro ao persistir tópico ${this.getName()}, ${retries}a tentativa`, err);
 
                      if (retries++ < 5) {
@@ -566,12 +575,7 @@ export default class Topic {
                      } else {
                         reject(err);
                      }
-
-                  } else {
-                     // Salvo com sucesso
-                     accept();
-                  }
-               });
+                  });
             } else {
                accept();
             }

@@ -5,27 +5,39 @@ import { AnyObject } from "../Constants";
  */
 export default class Repository<T> {
 
-   find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<T>) => void): void {
-      callback(undefined, undefined);
+   find(criteria: AnyObject, options: AnyObject): Promise<Array<T>> {
+      return new Promise<Array<T>>((accept, reject) => {
+         accept(undefined);
+      });
    }
 
-   count(criteria: AnyObject, options: AnyObject, callback: (err?: Error, total?: number) => void): void {
-      callback(undefined, 0);
+   count(criteria: AnyObject, options: AnyObject): Promise<number> {
+      return new Promise<number>((accept, reject) => {
+         accept(0);
+      });
    }
 
-   findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: T) => void): void {
-      callback(undefined, undefined);
+   findOne(criteria: AnyObject, options: AnyObject): Promise<T> {
+      return new Promise<T>((accept, reject) => {
+         accept(undefined);
+      });
    }
 
-   insert(data: Partial<T>, options: AnyObject, callback: (err?: Error, row?: T) => void): void {
-      callback(undefined, undefined);
+   insert(data: Partial<T>, options: AnyObject): Promise<T> {
+      return new Promise<T>((accept, reject) => {
+         accept(undefined);
+      });
    }
 
-   update(criteria: AnyObject, data: Partial<T>, options: AnyObject, callback: (err?: Error, updated?: number) => void): void {
-      callback(undefined, 0);
+   update(criteria: AnyObject, data: Partial<T>, options: AnyObject): Promise<number> {
+      return new Promise<number>((accept, reject) => {
+         accept(0);
+      });
    }
 
-   remove(criteria: AnyObject, options: AnyObject, callback: (err?: Error, removed?: number) => void): void {
-      callback(undefined, 0);
+   remove(criteria: AnyObject, options: AnyObject): Promise<number> {
+      return new Promise<number>((accept, reject) => {
+         accept(0);
+      });
    }
 }
