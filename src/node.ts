@@ -1,7 +1,17 @@
 
-export { ActionRequest, ActionResponse, Datastore } from './lib/Constants';
+export {
+   ActionRequest,
+   ActionResponse,
+   Datastore,
+   Json,
+   SyncTopicParams
+} from './lib/Constants';
 
-export { default as Server, MidleWare, MidleWareContext } from './lib/Server';
+export {
+   default as Server,
+   MidleWare,
+   MidleWareContext
+} from './lib/Server';
 
 export { default as Client } from './lib/Client';
 

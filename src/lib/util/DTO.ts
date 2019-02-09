@@ -1,4 +1,5 @@
 import { compress, decompress } from './Compress';
+import { Json } from '../Constants';
 
 /**
  * Marcador de Arrays
@@ -62,7 +63,7 @@ export default class DTO {
 
    private compressed?: string;
 
-   constructor(object: { [key: string]: any }) {
+   constructor(object: Json) {
       if (object instanceof DTO) {
          object = object.unflatten();
       }
@@ -78,7 +79,7 @@ export default class DTO {
    /**
    * Obtém a versão modificada do objeto original
    */
-   flatten(): { [key: string]: any } {
+   flatten(): Json {
       if (!this.flattened) {
          this.flattened = this.flattenObject(this.unflatten());
       }
@@ -89,7 +90,7 @@ export default class DTO {
    /**
     * Obtém a versão do objeto original
     */
-   unflatten(): { [key: string]: any } {
+   unflatten(): Json {
       if (!this.object) {
          if (this.flattened) {
             this.object = this.unflattenObject(this.flattened);
@@ -296,8 +297,6 @@ export default class DTO {
    }
 }
 
-type AnyObject = { [key: string]: any };
-
 /**
  * Definição do objeto de diff
  */
@@ -305,19 +304,19 @@ export interface DeltaObject {
    /**
     * Diferenças entre os objetos
     */
-   d?: AnyObject;
+   d?: Json;
    /**
     * Atributos adicionados
     */
-   a?: AnyObject;
+   a?: Json;
    /**
     * Atributos modificados
     */
-   m?: AnyObject;
+   m?: Json;
    /**
     * Alterações recursivas
     */
-   r?: AnyObject;
+   r?: Json;
 };
 
 /**
@@ -424,16 +423,16 @@ export class Delta {
       const bKeys = Object.keys(b).sort();
 
       // Adições
-      const adds: AnyObject = {};
+      const adds: Json = {};
 
       // Modificações
-      const mods: AnyObject = {};
+      const mods: Json = {};
 
       // Alterações recursivas
-      const recs: AnyObject = {};
+      const recs: Json = {};
 
       // Remoções
-      const dels: AnyObject = {};
+      const dels: Json = {};
 
       let aI = 0;
       let bI = 0;
@@ -505,7 +504,7 @@ export class Delta {
     * @param flattened 
     * @param delta 
     */
-   private patchObject(flattened: AnyObject, delta: DeltaObject) {
+   private patchObject(flattened: Json, delta: DeltaObject) {
       let operation: string;
       let key: any;
       let val: any;

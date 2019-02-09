@@ -55,13 +55,18 @@ export interface SyncTopicParams {
 }
 
 /**
+ * Representação de um objeto qualquer
+ */
+export interface Json { [key: string]: any };
+
+/**
  * Interface genérica usada neste publishers
  */
 export interface Datastore {
 
-   find(query: any, projection: any, callback: (err: Error, documents: Array<any>) => void): void;
+   find(query: Json, options: Json, callback: (err?: Error, rows?: Array<Json>) => void): void;
 
-   findOne(query: any, projection: any, callback: (err: Error, document: any) => void): void;
+   findOne(query: Json, options: Json, callback: (err?: Error, row?: Json) => void): void;
 
-   update(query: any, data: any, options?: any, cb?: (err: Error, numberOfUpdated: number) => void): void;
+   update(query: Json, data: Json, options: Json, callback: (err?: Error, numberOfUpdated?: number) => void): void;
 }

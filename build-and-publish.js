@@ -2,12 +2,17 @@
  * Faz o build e publicação no repositorio
  */
 const fs = require('fs');
-const { exec } = require('child_process');
+const exec =  require('child_process').exec;
 
+console.log('[npm run-script build]');
 const build = exec('npm run-script build');
 
 build.stdout.on('data', function (data) {
    console.log(data.toString());
+});
+
+build.stderr.on('data', function (data) {
+   console.warn(data.toString());
 });
 
 build.on('exit', function (code, signal) {
@@ -36,16 +41,29 @@ build.on('exit', function (code, signal) {
 
       fs.writeFileSync(__dirname + '/package.json', JSON.stringify(package, null, 3));
 
+      console.log('[npm publish] ' + package.name + '@' + package.version);
+
       const publish = exec('npm publish');
 
       publish.stdout.on('data', function (data) {
          console.log(data.toString());
       });
 
+      publish.stderr.on('data', function (data) {
+         console.warn(data.toString());
+      });
+      
+
       publish.on('exit', function (code, signal) {
          if (index < versions.length) {
+            console.log(arguments);
             next();
          }
+      });
+
+      publish.on('err', function (err) {
+         console.log('err', err);
+         throw err;
       });
    }
 

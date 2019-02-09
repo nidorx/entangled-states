@@ -1,4 +1,5 @@
 import ClientStorage from "./ClientStorage";
+import { Json } from "../Constants";
 
 /**
  * Implementação genérica com cache em memória para agilizar o acesso aos dados do storage.
@@ -16,7 +17,7 @@ export default abstract class ClientStorageCached implements ClientStorage {
 
    promises: { [key: string]: Promise<any> } = {};
 
-   timeouts: { [key: string]: any } = {};
+   timeouts: Json = {};
 
    constructor(namespace: string) {
       this.namespace = namespace;

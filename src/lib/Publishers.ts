@@ -1,5 +1,5 @@
 import Topic from './Topic';
-import { Datastore } from './Constants';
+import { Datastore, Json } from './Constants';
 
 /**
  * Limita a execução dos Publisher a no máximo 1 a cada <EXEC_LIMIT_TIMEOUT> ms
@@ -16,11 +16,11 @@ export interface QueryConfig {
     *
     * Quando o tópico for por id, pode se usar o formato query:{ nomeCampo : '$id' }. O $id será substituido pelo valor informado na publicação
     */
-   query?: { [key: string]: any };
+   query?: Json;
    /**
-    * Permite delimitar os campos que serão recuperados do store
+    * Permite adicionar configurações adicionais que serão avalidadas pelo storage
     */
-   projection?: any;
+   options?: Json;
    /**
     * Informa que dever retornar apenas um resultado (findOne)
     */
@@ -30,23 +30,26 @@ export interface QueryConfig {
     * 
     * Não se aplica quando singleResult=true
     */
-   filter?: (value: any, index: number, array: Array<any>, prevResults: Array<any>) => boolean;
+   filter?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => boolean;
    /**
     * Após filtrar os valores, permite visitar cada um dos itens
     * 
     * Não se aplica quando singleResult=true
     */
-   forEach?: (value: any, index: number, array: Array<any>, prevResults: Array<any>) => void;
+   forEach?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => void;
    /**
     * Permite mapear o resultado para outra estrutura de dados
     */
-   map?: (value: any, index: number, array: Array<any>, prevResults: Array<any>) => any;
+   map?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => any;
    /**
     * Permite extrair o valor de saída, a partir dos resultado atual e anteriores
     */
-   extract?: (array: Array<any>, prevResults: Array<any>) => any;
+   extract?: (rows: Array<Json>, prevResults: Array<any>) => Json;
 }
 
+/**
+ * Configurações de um publisher
+ */
 export interface Config {
    /**
     * Nome do tópico
@@ -63,7 +66,7 @@ export interface Config {
    /**
     * Invocado após o envio do tópico
     */
-   then?: (lastResult: any) => void;
+   then?: (lastResult: Json) => void;
 }
 
 /**
@@ -193,11 +196,11 @@ class Publishers {
    * @param prevResults 
    * @param config 
    */
-   private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<any>> {
+   private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<Json>> {
 
       const store = config.store;
       const query = { ...(config.query || {}) };
-      const projection = config.projection || {};
+      const options = { ...(config.options || {}) };
       const filter = config.filter;
       const forEach = config.forEach;
       const map = config.map;
@@ -208,53 +211,54 @@ class Publishers {
          changeQueryIdValue(query, id);
 
          if (config.singleResult) {
-            store.findOne(query, projection, (err, doc: any) => {
+            store.findOne(query, options, (err, doc) => {
                if (err) {
                   return reject(err);
                }
 
-               if (map) {
+               if (map && doc !== undefined) {
                   doc = map(doc, 0, [doc], prevResults);
                }
 
-               if (extract) {
+               if (extract && doc !== undefined) {
                   doc = extract([doc], prevResults);
                }
 
-               accept(doc);
+               accept(doc !== undefined ? [doc] : []);
             });
 
          } else {
 
-            store.find(query, projection, (err, docs: Array<any>) => {
+            store.find(query, options, (err, docs) => {
                if (err) {
                   return reject(err);
                }
 
-               if (filter) {
-                  docs = docs.filter((value: any, index: number, array: Array<any>) => {
-                     return filter(value, index, array, prevResults);
-                  });
+               if (docs) {
+                  if (filter) {
+                     docs = docs.filter((value, index, array) => {
+                        return filter(value, index, array, prevResults);
+                     });
+                  }
+
+                  if (forEach) {
+                     docs.forEach((value, index, array) => {
+                        forEach(value, index, array, prevResults);
+                     });
+                  }
+
+                  if (map) {
+                     docs = docs.map((value, index, array) => {
+                        return map(value, index, array, prevResults);
+                     });
+                  }
+
+                  if (extract) {
+                     docs = [extract(docs, prevResults)];
+                  }
                }
 
-               if (forEach) {
-                  docs.forEach((value: any, index: number, array: Array<any>) => {
-                     forEach(value, index, array, prevResults);
-                  });
-               }
-
-
-               if (map) {
-                  docs = docs.map((value: any, index: number, array: Array<any>) => {
-                     return map(value, index, array, prevResults);
-                  });
-               }
-
-               if (extract) {
-                  docs = extract(docs, prevResults);
-               }
-
-               accept(docs);
+               accept(docs || []);
             });
          }
       });

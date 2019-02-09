@@ -489,7 +489,7 @@ export default class Topic {
       const tryToLoad = () => {
 
          if (Topic.storage) {
-            Topic.storage.findOne({ name: this.getName() }, {}, (err, document?: TopicState) => {
+            Topic.storage.findOne({ name: this.getName() }, {}, (err?, row?) => {
                if (err) {
                   console.error(`Erro durante o carregamento do tópico ${this.getName()}, ${retries}a tentativa`, err);
                   setTimeout(tryToLoad, 10);
@@ -499,13 +499,14 @@ export default class Topic {
                // Marca como carregamento concluído
                this.isLoading = false;
 
-               if (document) {
+               if (row) {
+                  let state: TopicState = row as TopicState;
                   // Extrai os dados comprimidos da base
-                  this.SEQ = document.seq;
-                  this.state.seq = document.seq;
-                  this.state.dto = DTO.decompress(document.dataCompressed);
-                  this.state.dataCompressed = document.dataCompressed;
-                  this.state.deltas = document.deltas.map(delta => {
+                  this.SEQ = state.seq;
+                  this.state.seq = state.seq;
+                  this.state.dto = DTO.decompress(state.dataCompressed);
+                  this.state.dataCompressed = state.dataCompressed;
+                  this.state.deltas = state.deltas.map(delta => {
                      return {
                         seq: delta.seq,
                         dataFlatten: DTO.decompress(delta.dataCompressed),
