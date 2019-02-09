@@ -2,7 +2,7 @@
 export {
    ActionRequest,
    ActionResponse,
-   Json,
+   AnyObject as Json,
    SyncTopicParams
 } from './lib/Constants';
 
@@ -15,11 +15,11 @@ export {
 
 export { default as Client } from './lib/Client';
 
-export { default as Datastore } from './lib/datastore/Datastore';
-export { default as InMemoryDatastore } from './lib/datastore/InMemoryDatastore';
+export { default as Repository } from './lib/repository/Repository';
+export { default as InMemoryRepository } from './lib/repository/InMemoryRepository';
 
 export { default as ClientStorage } from './lib/storage/ClientStorage';
-export { default as ClientStorageCached } from './lib/storage/ClientStorageCached';
+export { default as ClientStorageAbstract } from './lib/storage/ClientStorageAbstract';
 export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemory';
 
 export { default as Actions, Callback } from './lib/Actions';

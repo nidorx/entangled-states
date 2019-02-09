@@ -1,9 +1,9 @@
-import ClientStorageCached from "./ClientStorageCached";
+import ClientStorageAbstract from "./ClientStorageAbstract";
 
 /**
  * Implementação do ClienteStore que usa o window.sessionStorage
  */
-export default class ClientStorageWebSession extends ClientStorageCached {
+export default class ClientStorageWebSession extends ClientStorageAbstract {
 
    getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {

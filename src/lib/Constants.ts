@@ -57,4 +57,4 @@ export interface SyncTopicParams {
 /**
  * Representação de um objeto qualquer
  */
-export interface Json { [key: string]: any };
+export interface AnyObject { [key: string]: any };

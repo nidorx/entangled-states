@@ -1,5 +1,5 @@
 import { compress, decompress } from './Compress';
-import { Json } from '../Constants';
+import { AnyObject } from '../Constants';
 
 /**
  * Marcador de Arrays
@@ -63,7 +63,7 @@ export default class DTO {
 
    private compressed?: string;
 
-   constructor(object: Json) {
+   constructor(object: AnyObject) {
       if (object instanceof DTO) {
          object = object.unflatten();
       }
@@ -79,7 +79,7 @@ export default class DTO {
    /**
    * Obtém a versão modificada do objeto original
    */
-   flatten(): Json {
+   flatten(): AnyObject {
       if (!this.flattened) {
          this.flattened = this.flattenObject(this.unflatten());
       }
@@ -90,7 +90,7 @@ export default class DTO {
    /**
     * Obtém a versão do objeto original
     */
-   unflatten(): Json {
+   unflatten(): AnyObject {
       if (!this.object) {
          if (this.flattened) {
             this.object = this.unflattenObject(this.flattened);
@@ -304,19 +304,19 @@ export interface DeltaObject {
    /**
     * Diferenças entre os objetos
     */
-   d?: Json;
+   d?: AnyObject;
    /**
     * Atributos adicionados
     */
-   a?: Json;
+   a?: AnyObject;
    /**
     * Atributos modificados
     */
-   m?: Json;
+   m?: AnyObject;
    /**
     * Alterações recursivas
     */
-   r?: Json;
+   r?: AnyObject;
 };
 
 /**
@@ -423,16 +423,16 @@ export class Delta {
       const bKeys = Object.keys(b).sort();
 
       // Adições
-      const adds: Json = {};
+      const adds: AnyObject = {};
 
       // Modificações
-      const mods: Json = {};
+      const mods: AnyObject = {};
 
       // Alterações recursivas
-      const recs: Json = {};
+      const recs: AnyObject = {};
 
       // Remoções
-      const dels: Json = {};
+      const dels: AnyObject = {};
 
       let aI = 0;
       let bI = 0;
@@ -504,7 +504,7 @@ export class Delta {
     * @param flattened 
     * @param delta 
     */
-   private patchObject(flattened: Json, delta: DeltaObject) {
+   private patchObject(flattened: AnyObject, delta: DeltaObject) {
       let operation: string;
       let key: any;
       let val: any;

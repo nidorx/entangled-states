@@ -1,10 +1,10 @@
 import { AsyncStorage } from "react-native";
-import ClientStorageCached from "./ClientStorageCached";
+import ClientStorageAbstract from "./ClientStorageAbstract";
 
 /**
  * Implementação do Storage para ser usado com React Native
  */
-export default class ClientStorageReactNative extends ClientStorageCached {
+export default class ClientStorageReactNative extends ClientStorageAbstract {
 
    getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {

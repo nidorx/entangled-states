@@ -1,11 +1,30 @@
-import ClientStorageCached from "./ClientStorageCached";
+import ClientStorageAbstract from "./ClientStorageAbstract";
+import { AnyObject } from "../Constants";
 
 /**
  * Implementação do ClienteStore em memória
  */
-export default class ClientStorageMemory extends ClientStorageCached {
+export default class ClientStorageMemory extends ClientStorageAbstract {
 
-   storage: { [key: string]: string } = {};
+   private ttl: number;
+
+   private storage: { [key: string]: string } = {};
+
+   private timeoutsM: AnyObject = {};
+
+   constructor(namespace: string, ttl: number = 10000) {
+      super(namespace);
+      this.ttl = ttl;
+   }
+
+   touch(key: string) {
+      super.touch(key);
+      clearTimeout(this.timeoutsM[key]);
+      this.timeoutsM[key] = setTimeout(() => {
+         // Apos expirar, remove o item do cache
+         this.removeItem(key);
+      }, this.ttl);
+   }
 
    getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {

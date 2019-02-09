@@ -1,10 +1,10 @@
-import Datastore from "./Datastore";
-import { Json } from "../Constants";
+import Repository from "./Repository";
+import { AnyObject } from "../Constants";
 
 /**
  * Data Store em memória, facilita o desenvolvimento de Mock de funcionalidades
  */
-export default class InMemoryDatastore implements Datastore {
+export default class InMemoryRepository extends Repository {
 
    SEQUENCE = 1;
 
@@ -26,24 +26,22 @@ export default class InMemoryDatastore implements Datastore {
       return true;
    }
 
-
-
-   find(query: Json, options: Json, callback: (err?: Error, rows?: Array<Json>) => void) {
+   find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<AnyObject>) => void) {
       setTimeout(() => {
-         const rows = this.ROWS.filter(this.match.bind(this, query));
+         const rows = this.ROWS.filter(this.match.bind(this, criteria));
          callback(undefined, rows);
       });
    };
 
-   findOne(query: Json, options: Json, callback: (err?: Error, row?: Json) => void) {
+   findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: AnyObject) => void) {
       setTimeout(() => {
-         const row = this.ROWS.find(this.match.bind(this, query));
+         const row = this.ROWS.find(this.match.bind(this, criteria));
          callback(undefined, row);
       });
    };
 
-   update(query: Json, data: Json, options?: Json, callback?: ((err?: Error, numberOfUpdated?: number) => void) | undefined) {
-      this.find(query, {}, (err, rows) => {
+   update(criteria: AnyObject, data: AnyObject, options?: AnyObject, callback?: ((err?: Error, updated?: number) => void) | undefined) {
+      this.find(criteria, {}, (err, rows) => {
          if (err) {
             if (callback) {
                callback(err);
@@ -70,16 +68,16 @@ export default class InMemoryDatastore implements Datastore {
       });
    };
 
-   insert(data: any, callback: (err: Error | null, document: any) => void) {
+   insert(data: AnyObject, callback: (err?: Error, row?: AnyObject) => void) {
       setTimeout(() => {
          data._id = this.SEQUENCE++;
          this.ROWS.push(data);
-         callback(null, data);
+         callback(undefined, data);
       });
    }
 
-   remove(query: Json, callback?: ((err?: Error, numberOfRemoved?: number) => void) | undefined) {
-      this.find(query, {}, (err, rows) => {
+   remove(criteria: AnyObject, options: AnyObject, callback: (err?: Error, removed?: number) => void) {
+      this.find(criteria, {}, (err, rows) => {
          if (err) {
             if (callback) {
                callback(err);

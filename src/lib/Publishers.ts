@@ -1,6 +1,6 @@
 import Topic from './Topic';
-import { Json } from './Constants';
-import Datastore from './datastore/Datastore';
+import { AnyObject } from './Constants';
+import Repository from './repository/Repository';
 
 /**
  * Limita a execução dos Publisher a no máximo 1 a cada <EXEC_LIMIT_TIMEOUT> ms
@@ -14,17 +14,17 @@ export interface QueryConfig {
    /**
    * Banco de dados que possui a informação
    */
-   store: Datastore;
+   store: Repository;
    /**
     * Os parametros de consulta no store
     *
     * Quando o tópico for por id, pode se usar o formato query:{ nomeCampo : '$id' }. O $id será substituido pelo valor informado na publicação
     */
-   params?: Json;
+   params?: AnyObject;
    /**
     * Permite adicionar configurações adicionais que serão avalidadas pelo storage
     */
-   options?: Json;
+   options?: AnyObject;
    /**
     * Informa que dever retornar apenas um resultado (findOne)
     */
@@ -34,21 +34,21 @@ export interface QueryConfig {
     * 
     * Não se aplica quando singleResult=true
     */
-   filter?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => boolean;
+   filter?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => boolean;
    /**
     * Após filtrar os valores, permite visitar cada um dos itens
     * 
     * Não se aplica quando singleResult=true
     */
-   forEach?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => void;
+   forEach?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => void;
    /**
     * Permite mapear o resultado para outra estrutura de dados
     */
-   map?: (row: Json, index: number, rows: Array<Json>, prevResults: Array<any>) => any;
+   map?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => any;
    /**
     * Permite extrair o valor de saída, a partir dos resultado atual e anteriores
     */
-   extract?: (rows: Array<Json>, prevResults: Array<any>) => Json;
+   extract?: (rows: Array<AnyObject>, prevResults: Array<any>) => AnyObject;
 }
 
 /**
@@ -72,7 +72,7 @@ export interface Config {
    /**
     * Invocado após o envio do tópico
     */
-   then?: (lastResult: Json) => void;
+   then?: (lastResult: AnyObject) => void;
 }
 
 /**
@@ -209,7 +209,7 @@ class Publishers {
    * @param prevResults 
    * @param config 
    */
-   private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<Json>> {
+   private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<AnyObject>> {
 
       const store = config.store;
       const params = { ...(config.params || {}) };

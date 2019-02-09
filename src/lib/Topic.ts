@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
 import DTO from './util/DTO';
-import Datastore from './datastore/Datastore';
+import Repository from './repository/Repository';
 
 /**
  * Tenta enviar para os clientes que não responderam neste intervalo
@@ -132,12 +132,12 @@ export default class Topic {
    /**
     * Permite persistir e recuperar o estado das mensagens do tópico da base de dados
     */
-   static storage?: Datastore;
+   static storage?: Repository;
 
    /**
     * Define o mecanismo de backup e restauração do tópico
     */
-   static setStorage = (storage: Datastore) => {
+   static setStorage = (storage: Repository) => {
       Topic.storage = storage;
    }
 

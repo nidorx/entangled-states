@@ -1,18 +1,18 @@
 
 import http from 'http';
 import express from 'express';
+import Topic from '../../src/lib/Topic';
 import Server from '../../src/lib/Server';
 import Client from '../../src/lib/Client';
-import ClientStorageMemory from '../../src/lib/storage/ClientStorageMemory';
-import Publishers from '../../src/lib/Publishers';
-import Topic from '../../src/lib/Topic';
-import InMemoryDatastore from '../../src/lib/datastore/InMemoryDatastore';
 import Actions from '../../src/lib/Actions';
+import Publishers from '../../src/lib/Publishers';
+import ClientStorageMemory from '../../src/lib/storage/ClientStorageMemory';
+import InMemoryRepository from '../../src/lib/repository/InMemoryRepository';
 // import fs from 'fs';
 
-const DB_TOPICS = new InMemoryDatastore();
-const DB_GROUPS = new InMemoryDatastore();
-const DB_USERS = new InMemoryDatastore();
+const DB_TOPICS = new InMemoryRepository();
+const DB_GROUPS = new InMemoryRepository();
+const DB_USERS = new InMemoryRepository();
 
 describe('Server', () => {
 
@@ -160,7 +160,7 @@ describe('Server', () => {
       });
 
       Actions.register('deleteGroup', (data: any, ws, accept, reject) => {
-         DB_GROUPS.remove({ _id: data._id }, (err) => {
+         DB_GROUPS.remove({ _id: data._id }, {}, (err) => {
             if (err) {
                return reject(err);
             }
@@ -198,7 +198,7 @@ describe('Server', () => {
       });
 
       Actions.register('deleteUser', (data: any, ws, accept, reject) => {
-         DB_USERS.remove({ _id: data._id }, (err) => {
+         DB_USERS.remove({ _id: data._id }, {}, (err) => {
             if (err) {
                return reject(err);
             }
