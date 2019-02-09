@@ -6,7 +6,7 @@ const cpExec = require('child_process').exec;
 
 function exec(command, callback) {
    callback = callback || function () { };
-   
+
    return new Promise(function (accept, reject) {
       console.log('[' + command + ']');
       const com = cpExec(command);
@@ -41,9 +41,9 @@ var package = JSON.parse(fs.readFileSync(__dirname + '/package.json'));
 
 exec('npm run-script build')
    // publicação
-   // .then(publish.bind(undefined, 'web'))
-   // .then(publish.bind(undefined, 'react'))
-   // .then(publish.bind(undefined, 'node'))
+   .then(publish.bind(undefined, 'web'))
+   .then(publish.bind(undefined, 'react'))
+   .then(publish.bind(undefined, 'node'))
    // commit e push
    .then(exec.bind(undefined, 'git add --all', null))
    .then(exec.bind(undefined, 'git commit -m "Publicação da versão v' + package.version + '"', null))
