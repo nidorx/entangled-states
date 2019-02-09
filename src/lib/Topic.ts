@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
-import { Datastore } from './Constants';
 import DTO from './util/DTO';
+import Datastore from './datastore/Datastore';
 
 /**
  * Tenta enviar para os clientes que não responderam neste intervalo

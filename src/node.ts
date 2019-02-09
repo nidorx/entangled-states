@@ -2,10 +2,10 @@
 export {
    ActionRequest,
    ActionResponse,
-   Datastore,
    Json,
    SyncTopicParams
 } from './lib/Constants';
+
 
 export {
    default as Server,
@@ -14,6 +14,9 @@ export {
 } from './lib/Server';
 
 export { default as Client } from './lib/Client';
+
+export { default as Datastore } from './lib/datastore/Datastore';
+export { default as InMemoryDatastore } from './lib/datastore/InMemoryDatastore';
 
 export { default as ClientStorage } from './lib/storage/ClientStorage';
 export { default as ClientStorageCached } from './lib/storage/ClientStorageCached';

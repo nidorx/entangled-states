@@ -1,22 +1,26 @@
 import Topic from './Topic';
-import { Datastore, Json } from './Constants';
+import { Json } from './Constants';
+import Datastore from './datastore/Datastore';
 
 /**
  * Limita a execução dos Publisher a no máximo 1 a cada <EXEC_LIMIT_TIMEOUT> ms
  */
 const EXEC_LIMIT_TIMEOUT = 100;
 
+/**
+ * Configurações da consulta usada por um publicador
+ */
 export interface QueryConfig {
    /**
    * Banco de dados que possui a informação
    */
    store: Datastore;
    /**
-    * A Query de consulta no store
+    * Os parametros de consulta no store
     *
     * Quando o tópico for por id, pode se usar o formato query:{ nomeCampo : '$id' }. O $id será substituido pelo valor informado na publicação
     */
-   query?: Json;
+   params?: Json;
    /**
     * Permite adicionar configurações adicionais que serão avalidadas pelo storage
     */
@@ -60,9 +64,11 @@ export interface Config {
    */
    idRequired?: boolean;
    /**
+    * A configuração da Query deste publicador. 
+    * 
     * Permite aninhar diversas queries
     */
-   queries: Array<QueryConfig>;
+   query: QueryConfig | Array<QueryConfig>;
    /**
     * Invocado após o envio do tópico
     */
@@ -104,7 +110,14 @@ class Publishers {
    create(config: Config) {
       let topic = config.topic;
       const byId = config.idRequired;
-      const queries = config.queries;
+
+      let queries: Array<QueryConfig>;
+      if (Array.isArray(config.query)) {
+         queries = config.query as Array<QueryConfig>;
+      } else {
+         queries = [config.query as QueryConfig];
+      }
+
       const then = config.then;
 
       // Registra o nome do tópico, sem isso, não existe instanciação automática
@@ -199,7 +212,7 @@ class Publishers {
    private exec(id: any, prevResults: Array<any>, config: QueryConfig): Promise<Array<Json>> {
 
       const store = config.store;
-      const query = { ...(config.query || {}) };
+      const params = { ...(config.params || {}) };
       const options = { ...(config.options || {}) };
       const filter = config.filter;
       const forEach = config.forEach;
@@ -208,10 +221,10 @@ class Publishers {
 
       return new Promise<Array<any>>((accept, reject) => {
 
-         changeQueryIdValue(query, id);
+         changeQueryIdValue(params, id);
 
          if (config.singleResult) {
-            store.findOne(query, options, (err, doc) => {
+            store.findOne(params, options, (err, doc) => {
                if (err) {
                   return reject(err);
                }
@@ -229,7 +242,7 @@ class Publishers {
 
          } else {
 
-            store.find(query, options, (err, docs) => {
+            store.find(params, options, (err, docs) => {
                if (err) {
                   return reject(err);
                }

@@ -1,18 +1,18 @@
 
 import http from 'http';
 import express from 'express';
-import Datastore from 'nedb';
 import Server from '../../src/lib/Server';
 import Client from '../../src/lib/Client';
 import ClientStorageMemory from '../../src/lib/storage/ClientStorageMemory';
 import Publishers from '../../src/lib/Publishers';
 import Topic from '../../src/lib/Topic';
+import InMemoryDatastore from '../../src/lib/datastore/InMemoryDatastore';
 import Actions from '../../src/lib/Actions';
 // import fs from 'fs';
 
-const DB_TOPICS = new Datastore({ inMemoryOnly: true });
-const DB_GROUPS = new Datastore({ inMemoryOnly: true });
-const DB_USERS = new Datastore({ inMemoryOnly: true });
+const DB_TOPICS = new InMemoryDatastore();
+const DB_GROUPS = new InMemoryDatastore();
+const DB_USERS = new InMemoryDatastore();
 
 describe('Server', () => {
 
@@ -84,11 +84,11 @@ describe('Server', () => {
       Publishers.create({
          topic: 'groups',
          idRequired: false,
-         queries: [
+         query: [
             {
                store: DB_GROUPS,
                singleResult: false,
-               query: {},
+               params: {},
             }
          ]
       });
@@ -97,11 +97,11 @@ describe('Server', () => {
       Publishers.create({
          topic: 'groupById',
          idRequired: true,
-         queries: [
+         query: [
             {
                store: DB_GROUPS,
                singleResult: true,
-               query: { _id: '$id' },
+               params: { _id: '$id' },
             }
          ]
       });
@@ -110,11 +110,11 @@ describe('Server', () => {
       Publishers.create({
          topic: 'users',
          idRequired: true,
-         queries: [
+         query: [
             {
                store: DB_USERS,
                singleResult: false,
-               query: { groupId: '$id' },
+               params: { groupId: '$id' },
             }
          ]
       });
@@ -122,11 +122,11 @@ describe('Server', () => {
       Publishers.create({
          topic: 'userById',
          idRequired: true,
-         queries: [
+         query: [
             {
                store: DB_USERS,
                singleResult: true,
-               query: { _id: '$id' },
+               params: { _id: '$id' },
             }
          ]
       });
