@@ -2,6 +2,7 @@
  * Faz o build e publicação no repositorio
  */
 const fs = require('fs');
+const rimraf = require('rimraf');
 const cpExec = require('child_process').exec;
 
 function exec(command, callback) {
@@ -39,21 +40,26 @@ function exec(command, callback) {
 
 var package = JSON.parse(fs.readFileSync(__dirname + '/package.json'));
 
-exec('npm run-script build')
-   // publicação
-   .then(publish.bind(undefined, 'web'))
-   .then(publish.bind(undefined, 'react'))
-   .then(publish.bind(undefined, 'node'))
-   // commit e push
-   .then(exec.bind(undefined, 'git add --all', null))
-   .then(exec.bind(undefined, 'git commit -m "Publicação da versão v' + package.version + '"', null))
-   .then(exec.bind(undefined, 'git push', null))
-   .then(exec.bind(undefined, 'git tag v' + package.version, null))
-   .then(exec.bind(undefined, 'git push --tags', null))
-   .catch(err => {
-      console.error(err);
-   })
-   ;
+rimraf('./dist', {}, function (err) {
+   if (err) {
+      throw err;
+   }
+
+   exec('npm run-script build')
+      // publicação
+      .then(publish.bind(undefined, 'web'))
+      .then(publish.bind(undefined, 'react'))
+      .then(publish.bind(undefined, 'node'))
+      // commit e push
+      .then(exec.bind(undefined, 'git add --all', null))
+      .then(exec.bind(undefined, 'git commit -m "Publicação da versão v' + package.version + '"', null))
+      .then(exec.bind(undefined, 'git push', null))
+      .then(exec.bind(undefined, 'git tag v' + package.version, null))
+      .then(exec.bind(undefined, 'git push --tags', null))
+      .catch(err => {
+         console.error(err);
+      })
+});
 
 function publish(suffix) {
 
