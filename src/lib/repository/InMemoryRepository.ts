@@ -4,11 +4,11 @@ import { AnyObject } from "../Constants";
 /**
  * Data Store em memória, facilita o desenvolvimento de Mock de funcionalidades
  */
-export default class InMemoryRepository extends Repository {
+export default class InMemoryRepository<T> extends Repository<(T & AnyObject)> {
 
    SEQUENCE = 1;
 
-   ROWS: any[] = [];
+   ROWS: Array<T & AnyObject> = [];
 
    match(query: any, row: any) {
       for (var attr in query) {
@@ -26,21 +26,21 @@ export default class InMemoryRepository extends Repository {
       return true;
    }
 
-   find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<AnyObject>) => void) {
+   find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<T & AnyObject>) => void) {
       setTimeout(() => {
          const rows = this.ROWS.filter(this.match.bind(this, criteria));
          callback(undefined, rows);
       });
    };
 
-   findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: AnyObject) => void) {
+   findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: (T & AnyObject)) => void) {
       setTimeout(() => {
          const row = this.ROWS.find(this.match.bind(this, criteria));
          callback(undefined, row);
       });
    };
 
-   update(criteria: AnyObject, data: AnyObject, options?: AnyObject, callback?: ((err?: Error, updated?: number) => void) | undefined) {
+   update(criteria: AnyObject, data: Partial<T & AnyObject>, options?: AnyObject, callback?: ((err?: Error, updated?: number) => void) | undefined) {
       this.find(criteria, {}, (err, rows) => {
          if (err) {
             if (callback) {
@@ -68,10 +68,10 @@ export default class InMemoryRepository extends Repository {
       });
    };
 
-   insert(data: AnyObject, callback: (err?: Error, row?: AnyObject) => void) {
+   insert(data: Partial<T & AnyObject>, callback: (err?: Error, row?: AnyObject) => void) {
       setTimeout(() => {
          data._id = this.SEQUENCE++;
-         this.ROWS.push(data);
+         this.ROWS.push(data as (T & AnyObject));
          callback(undefined, data);
       });
    }

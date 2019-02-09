@@ -14,7 +14,7 @@ export interface QueryConfig {
    /**
    * Banco de dados que possui a informação
    */
-   store: Repository;
+   store: Repository<any>;
    /**
     * Os parametros de consulta no store
     *

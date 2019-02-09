@@ -132,12 +132,12 @@ export default class Topic {
    /**
     * Permite persistir e recuperar o estado das mensagens do tópico da base de dados
     */
-   static storage?: Repository;
+   static storage?: Repository<any>;
 
    /**
     * Define o mecanismo de backup e restauração do tópico
     */
-   static setStorage = (storage: Repository) => {
+   static setStorage = (storage: Repository<any>) => {
       Topic.storage = storage;
    }
 
