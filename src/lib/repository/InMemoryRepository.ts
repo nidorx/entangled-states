@@ -27,17 +27,18 @@ export default class InMemoryRepository<T> extends Repository<(T & AnyObject)> {
    }
 
    find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<T & AnyObject>) => void) {
-      setTimeout(() => {
-         const rows = this.ROWS.filter(this.match.bind(this, criteria));
-         callback(undefined, rows);
-      });
+      const rows = this.ROWS.filter(this.match.bind(this, criteria));
+      callback(undefined, rows);
    };
 
+   count(criteria: AnyObject, options: AnyObject, callback: (err?: Error, total?: number) => void): void {
+      const rows = this.ROWS.filter(this.match.bind(this, criteria));
+      callback(undefined, rows.length);
+   }
+
    findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: (T & AnyObject)) => void) {
-      setTimeout(() => {
-         const row = this.ROWS.find(this.match.bind(this, criteria));
-         callback(undefined, row);
-      });
+      const row = this.ROWS.find(this.match.bind(this, criteria));
+      callback(undefined, row);
    };
 
    update(criteria: AnyObject, data: Partial<T & AnyObject>, options?: AnyObject, callback?: ((err?: Error, updated?: number) => void) | undefined) {
@@ -69,11 +70,9 @@ export default class InMemoryRepository<T> extends Repository<(T & AnyObject)> {
    };
 
    insert(data: Partial<T & AnyObject>, callback: (err?: Error, row?: AnyObject) => void) {
-      setTimeout(() => {
-         data._id = this.SEQUENCE++;
-         this.ROWS.push(data as (T & AnyObject));
-         callback(undefined, data);
-      });
+      data._id = this.SEQUENCE++;
+      this.ROWS.push(data as (T & AnyObject));
+      callback(undefined, data);
    }
 
    remove(criteria: AnyObject, options: AnyObject, callback: (err?: Error, removed?: number) => void) {

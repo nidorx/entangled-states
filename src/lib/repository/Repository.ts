@@ -6,22 +6,26 @@ import { AnyObject } from "../Constants";
 export default class Repository<T> {
 
    find(criteria: AnyObject, options: AnyObject, callback: (err?: Error, rows?: Array<T>) => void): void {
-      setTimeout(callback.bind(undefined, undefined, undefined));
+      callback(undefined, undefined);
+   }
+
+   count(criteria: AnyObject, options: AnyObject, callback: (err?: Error, total?: number) => void): void {
+      callback(undefined, 0);
    }
 
    findOne(criteria: AnyObject, options: AnyObject, callback: (err?: Error, row?: T) => void): void {
-      setTimeout(callback.bind(undefined, undefined, undefined));
+      callback(undefined, undefined);
    }
 
    insert(data: Partial<T>, options: AnyObject, callback: (err?: Error, row?: T) => void): void {
-      setTimeout(callback.bind(undefined, undefined, undefined));
+      callback(undefined, undefined);
    }
 
    update(criteria: AnyObject, data: Partial<T>, options: AnyObject, callback: (err?: Error, updated?: number) => void): void {
-      setTimeout(callback.bind(undefined, undefined, 0));
+      callback(undefined, 0);
    }
 
    remove(criteria: AnyObject, options: AnyObject, callback: (err?: Error, removed?: number) => void): void {
-      setTimeout(callback.bind(undefined, undefined, 0));
+      callback(undefined, 0);
    }
 }
