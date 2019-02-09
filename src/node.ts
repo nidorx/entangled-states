@@ -2,7 +2,7 @@
 export {
    ActionRequest,
    ActionResponse,
-   AnyObject as Json,
+   AnyObject,
    SyncTopicParams
 } from './lib/Constants';
 

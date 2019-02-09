@@ -18,7 +18,7 @@ describe('Server', () => {
 
    let server: Server;
 
-   afterAll((done) => {
+   afterAll(async (done) => {
       server.close(done);
    });
 
