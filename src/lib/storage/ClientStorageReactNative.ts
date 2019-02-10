@@ -6,7 +6,7 @@ import ClientStorageAbstract from "./ClientStorageAbstract";
  */
 export default class ClientStorageReactNative extends ClientStorageAbstract {
 
-   getItem(key: string): Promise<string | null> {
+   protected getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {
          AsyncStorage.getItem(key, (err, value) => {
             if (err) {
@@ -18,7 +18,7 @@ export default class ClientStorageReactNative extends ClientStorageAbstract {
       });
    }
 
-   setItem(key: string, data: string): Promise<void> {
+   protected setItem(key: string, data: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
          AsyncStorage.setItem(key, data, (err) => {
             if (err) {
@@ -30,7 +30,7 @@ export default class ClientStorageReactNative extends ClientStorageAbstract {
       });
    }
 
-   removeItem(key: string): Promise<void> {
+   protected removeItem(key: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
          AsyncStorage.removeItem(key, (err) => {
             if (err) {

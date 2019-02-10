@@ -8,38 +8,44 @@ export default class ClientStorageMemory extends ClientStorageAbstract {
 
    private ttl: number;
 
-   private storage: { [key: string]: string } = {};
-
-   private timeoutsM: AnyObject = {};
+   private storage: {
+      [key: string]: {
+         inserted: number,
+         value: string
+      }
+   } = {};
 
    constructor(namespace: string, ttl: number = 10000) {
       super(namespace);
       this.ttl = ttl;
    }
 
-   touch(key: string) {
-      super.touch(key);
-      clearTimeout(this.timeoutsM[key]);
-      this.timeoutsM[key] = setTimeout(() => {
-         // Apos expirar, remove o item do cache
-         this.removeItem(key);
-      }, this.ttl);
+   getTTL(key: string): number {
+      key = this.toNamespaceKey(key);
+      return this.storage[key] ? ((new Date()).getTime() - this.storage[key].inserted) : -1;
    }
 
-   getItem(key: string): Promise<string | null> {
+   protected getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {
-         accept(this.storage[key] || null);
+         accept(this.storage[key] ? this.storage[key].value : null);
       });
    }
 
-   setItem(key: string, data: string): Promise<void> {
+   protected setItem(key: string, data: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
-         this.storage[key] = data;
+         this.storage[key] = {
+            inserted: (new Date()).getTime(),
+            value: data
+         };
+         setTimeout(() => {
+            // Apos expirar, remove o item do cache
+            this.removeItem(key);
+         }, this.ttl);
          accept();
       });
    }
 
-   removeItem(key: string): Promise<void> {
+   protected removeItem(key: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
          delete this.storage[key];
          accept();

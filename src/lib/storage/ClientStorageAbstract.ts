@@ -6,7 +6,7 @@ import { AnyObject } from "../Constants";
  * 
  * Os dados ficam em cache por 10 segundos apenas
  */
-export default abstract class ClientStorageCached implements ClientStorage {
+export default abstract class ClientStorageAbstract implements ClientStorage {
 
    protected namespace: string;
 
@@ -24,9 +24,9 @@ export default abstract class ClientStorageCached implements ClientStorage {
    }
 
    abstract keys(): Promise<Array<string>>;
-   abstract getItem(key: string): Promise<string | null>;
-   abstract setItem(key: string, data: string): Promise<void>;
-   abstract removeItem(key: string): Promise<void>;
+   protected abstract getItem(namespaceKey: string): Promise<string | null>;
+   protected abstract setItem(namespaceKey: string, data: string): Promise<void>;
+   protected abstract removeItem(namespaceKey: string): Promise<void>;
 
    /**
     * Atualiza o prazo de vida de um item do cache
@@ -43,7 +43,7 @@ export default abstract class ClientStorageCached implements ClientStorage {
 
    get<T>(key: string): Promise<T> {
 
-      key = `@${this.namespace}_${key}`;
+      key = this.toNamespaceKey(key);
 
       let promise = this.promises[key];
       if (!promise) {
@@ -96,7 +96,7 @@ export default abstract class ClientStorageCached implements ClientStorage {
 
    set(key: string, data: any): Promise<void> {
 
-      key = `@${this.namespace}_${key}`;
+      key = this.toNamespaceKey(key);
 
       return new Promise<void>((accept, reject) => {
          let value: string;
@@ -120,9 +120,13 @@ export default abstract class ClientStorageCached implements ClientStorage {
       });
    }
 
+   toNamespaceKey(key: string){
+      return `@${this.namespace}_${key}`;
+   }
+
    remove(key: string): Promise<void> {
 
-      key = `@${this.namespace}_${key}`;
+      key = this.toNamespaceKey(key);
 
       return new Promise<any>((accept, reject) => {
          this.removeItem(key)

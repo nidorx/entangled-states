@@ -5,20 +5,20 @@ import ClientStorageAbstract from "./ClientStorageAbstract";
  */
 export default class ClientStorageWebLocal extends ClientStorageAbstract {
 
-   getItem(key: string): Promise<string | null> {
+   protected getItem(key: string): Promise<string | null> {
       return new Promise<string | null>((accept, reject) => {
          accept(window.localStorage.getItem(key));
       });
    }
 
-   setItem(key: string, data: string): Promise<void> {
+   protected setItem(key: string, data: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
          window.localStorage.setItem(key, data);
          accept();
       });
    }
 
-   removeItem(key: string): Promise<void> {
+   protected removeItem(key: string): Promise<void> {
       return new Promise<void>((accept, reject) => {
          window.localStorage.removeItem(key);
          accept();
