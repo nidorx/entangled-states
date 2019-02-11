@@ -102,6 +102,8 @@ export default class Client {
       }
    } = {};
 
+   private timeouts: Array<number> = [];
+
    private host: string;
 
    private storage: ClientStorage;
@@ -125,6 +127,13 @@ export default class Client {
          this.ws.close();
          this.ws = undefined;
       }
+
+      // remove todos os timeouts
+      this.timeouts.forEach(id => {
+         clearTimeout(id);
+      });
+
+      this.timeouts = [];
    }
 
    /**
@@ -235,7 +244,7 @@ export default class Client {
 
                // Salva no Storage os dados do tópico
                // Só persiste quando recebe novas mensagens
-               setTimeout(() => {
+               this.setTimeout(() => {
                   this.storage.set(`topic_${message.topic}`, {
                      seq: subscription.seq,
                      compressed: (subscription.dto as DTO).compress(),
@@ -254,7 +263,7 @@ export default class Client {
          // connection closed
          if (this.reconnect) {
             // Faz nova conexão
-            setTimeout(this.connect.bind(this), 10);
+            this.setTimeout(this.connect.bind(this), 10);
          }
       };
    }
@@ -265,6 +274,10 @@ export default class Client {
     * @param topic 
     */
    subscribe(topic: string, callback: (data: any) => void): () => void {
+      if (this.isClosed()) {
+         return () => { };
+      }
+
 
       if (!this.subscriptions[topic]) {
          this.subscriptions[topic] = {
@@ -336,6 +349,9 @@ export default class Client {
     * @param action 
     */
    exec(action: string, data: any): Promise<any> {
+      if (this.isClosed()) {
+         return Promise.reject('Client is closed');
+      }
 
       const requestId = `${Client.REQUEST_SEQUENCE.id++}`;
       const promise = new Promise<any>((accept, reject) => {
@@ -358,7 +374,7 @@ export default class Client {
       });
 
       // Após 30 segundos, se não hover resposta, Timeout
-      setTimeout(() => {
+      this.setTimeout(() => {
          if (this.promises[requestId]) {
             this.promises[requestId].reject('A resposta da requisição excedeu 30 segundos.');
             delete this.promises[requestId];
@@ -373,6 +389,10 @@ export default class Client {
     * Evita que o servidor envie todas as mensagens para todos
     */
    private syncTopics() {
+      if (this.isClosed()) {
+         return;
+      }
+
       const data = Object.keys(this.subscriptions)
          .map(topic => {
             // Se não existe callback, não está subscrito
@@ -385,7 +405,7 @@ export default class Client {
             } as SyncTopicParams;
          })
          .filter(item => item !== undefined);
-      
+
       this.exec('syncTopics', data)
          .then(() => { })
          .catch(() => { });
@@ -396,9 +416,43 @@ export default class Client {
     * Evita que o servidor envie todas as mensagens para todos
     */
    private syncTopic(topic: string) {
-      this.exec('syncTopic', {
+      if (this.isClosed()) {
+         return;
+      }
+
+      let data = {
          topic: topic,
          seq: this.subscriptions[topic].seq
-      } as SyncTopicParams);
+      } as SyncTopicParams;
+
+      this.exec('syncTopic', data)
+         .then(() => { })
+         .catch(() => { });
+   }
+
+   /**
+    * Timeouts controlados
+    * 
+    * @param handler 
+    * @param timeout 
+    */
+   setTimeout(handler: (...args: any[]) => void, timeout: number): number {
+      if (this.isClosed()) {
+         return -1;
+      }
+
+      let id = setTimeout(() => {
+         let idx = this.timeouts.indexOf(id);
+         if (idx >= 0) {
+            this.timeouts.splice(idx, 1);
+         }
+         handler();
+      }, timeout);
+      this.timeouts.push(id);
+      return id;
+   }
+
+   isClosed() {
+      return (!this.ws && !this.reconnect);
    }
 }

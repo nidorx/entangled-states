@@ -5,6 +5,7 @@ import { ServerOptions } from 'ws';
 import Topic from "./Topic";
 import Actions from "./Actions";
 import { ActionResponse, ActionRequest } from "./Constants";
+const stoppable = require('stoppable');
 
 
 // Import default actions
@@ -72,7 +73,7 @@ export default class Server {
    constructor(server: HttpServer, options?: ServerOptions, callback?: () => void) {
       this.onConnection = this.onConnection.bind(this);
 
-      this.server = server;
+      this.server = stoppable(server);
 
       //initialize the WebSocket server instance
       this.webSocketServer = new WebSocket.Server({
@@ -89,13 +90,7 @@ export default class Server {
     * @param cb 
     */
    close(cb?: (err?: Error) => void) {
-      this.webSocketServer.close(wserr => {
-         this.server.close(() => {
-            if (cb) {
-               cb(wserr);
-            }
-         });
-      });
+      (this.server as any).stop(cb);
    }
 
    /**
@@ -222,19 +217,23 @@ export default class Server {
          .then(data => {
 
             // Envia a resposta ao solicitante
-            context.ws.send(JSON.stringify({
-               id: request.id,
-               data: data
-            } as ActionResponse));
+            if (context.ws.readyState === context.ws.OPEN) {
+               context.ws.send(JSON.stringify({
+                  id: request.id,
+                  data: data
+               } as ActionResponse));
+            }
 
          })
          .catch(cause => {
             // Envia o erro ao solicitante
-            context.ws.send(JSON.stringify({
-               id: request.id,
-               error: `${cause || 'Ocorreu um erro inesperado.'}`,
-               stack: cause ? cause.stack : undefined
-            } as ActionResponse));
+            if (context.ws.readyState === context.ws.OPEN) {
+               context.ws.send(JSON.stringify({
+                  id: request.id,
+                  error: `${cause || 'Ocorreu um erro inesperado.'}`,
+                  stack: cause ? cause.stack : undefined
+               } as ActionResponse));
+            }
          });
    }
 

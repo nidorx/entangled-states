@@ -1,6 +1,6 @@
 {
    "name": "websocket-pubsub",
-   "version": "0.0.29",
+   "version": "0.0.30",
    "description": "Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade",
    "main": "dist/node.js",
    "repository": {
@@ -13,13 +13,15 @@
       "README.md"
    ],
    "scripts": {
-      "test": "jest",
+      "test": "jest --runInBand",
       "build-ts": "tsc",
       "build": "npm run build-ts && npm run test"
    },
    "author": "Alex Rodin <contato@alexrodin.info>",
    "license": "MIT",
-   "dependencies": {},
+   "dependencies": {
+      "stoppable": "1.1.0"
+   },
    "devDependencies": {
       "@types/ws": "6.0.1",
       "@types/jest": "23.3.14",
@@ -34,7 +36,7 @@
    },
    "jest": {
       "bail": true,
-      "notify": true,
+      "notify": false,
       "verbose": true,
       "transform": {
          "^.+\\.tsx?$": "ts-jest"

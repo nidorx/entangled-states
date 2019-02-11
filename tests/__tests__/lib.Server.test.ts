@@ -18,29 +18,27 @@ describe('Server', () => {
 
    let server: Server;
 
-   it('Deve permitir e gerenciar a conexão e desconexão de clientes', (done) => {
+   it('Deve permitir e gerenciar a conexão e desconexão de clientes', async (done) => {
 
       const onConnection = server.on('connection', (ctx, next) => {
          next();
-
-         setTimeout(() => {
-            // finaliza a conexao
-            client.close();
-         }, 50);
       });
 
       const onClose = server.on('close', (ctx, next) => {
-         next();
-
          // Se esse ponto não for invocado, vai estourar timeout
          done();
+
+         next();
       });
 
       const client = new Client('ws://localhost:3000', new ClientStorageMemory('test'));
-      client.connect();
+      client.connect(() => {
+         // finaliza a conexao, deve chamar o 'close' do server
+         client.close();
+      });
    }, 3000);
 
-   it('Após fazer o subscribe, deve receber imediatamente os dados do tópico', (done) => {
+   it('Após fazer o subscribe, deve receber imediatamente os dados do tópico', async (done) => {
 
       // Cria dados do grupo
       const clientA = new Client('ws://localhost:3000', new ClientStorageMemory('test'));
@@ -48,11 +46,15 @@ describe('Server', () => {
          clientA.exec('createGroup', { name: 'Grupo 1' })
             .then((id) => {
 
+               // Finaliza a conexão do cliente
                clientA.close();
 
                const clientB = new Client('ws://localhost:3000', new ClientStorageMemory('test'));
                clientB.connect(() => {
                   clientB.subscribe('groups', (groups) => {
+
+                     // Finaliza a conexão do cliente
+                     clientB.close();
 
                      // Se esse ponto não for invocado, vai estourar timeout 
                      done();
@@ -62,8 +64,8 @@ describe('Server', () => {
       });
    }, 3000);
 
-   afterAll(async (done) => {
-      server.close((err)=>{
+   afterEach(async (done) => {
+      server.close((err) => {
          done(err);
       });
    });
@@ -71,8 +73,7 @@ describe('Server', () => {
    /**
     * Inicializa o servidor e os parametros testáveis
     */
-   beforeAll((done) => {
-
+   beforeEach(async (done) => {
       const app = express();
       const httpServer = http.createServer(app);
 
