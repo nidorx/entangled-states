@@ -1,5 +1,15 @@
 /**
- * Faz o build, versionamento e publicação no repositorio
+ * Faz o build publicação no repositorio e tag do github.
+ * 
+ * O versionamento do package.json não é feito automaticamente, afim de permitir um maior controle sobre o deploy.
+ * 
+ * Os passos para usar esses script são:
+ * 
+ * 1 - Após fazer alterações de código, conduzir normalmente com os commits no git
+ * 2 - No momento de fazer a publicação de uma versão, no terminal:
+ *    a) git add --all
+ *    b) git commit -m "Mensagem das alterações feitas"
+ *    c) node ./publish.js
  */
 
 const fs = require('fs');
@@ -86,9 +96,4 @@ function publish(suffix) {
    console.log('Publicando artefato: ' + package.name + '@' + package.version);
 
    return exec('npm publish');
-
-   // publish.on('err', function (err) {
-   //    console.log('err', err);
-   //    throw err;
-   // });
 }

@@ -18,10 +18,6 @@ describe('Server', () => {
 
    let server: Server;
 
-   afterAll(async (done) => {
-      server.close(done);
-   });
-
    it('Deve permitir e gerenciar a conexão e desconexão de clientes', (done) => {
 
       const onConnection = server.on('connection', (ctx, next) => {
@@ -65,6 +61,12 @@ describe('Server', () => {
             });
       });
    }, 3000);
+
+   afterAll(async (done) => {
+      server.close((err)=>{
+         done(err);
+      });
+   });
 
    /**
     * Inicializa o servidor e os parametros testáveis

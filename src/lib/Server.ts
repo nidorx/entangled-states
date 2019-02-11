@@ -65,10 +65,14 @@ export default class Server {
 
    webSocketServer: WebSocket.Server;
 
+   server: HttpServer;
+
    middlewares: { [key: string]: Array<MidleWare> } = {};
 
    constructor(server: HttpServer, options?: ServerOptions, callback?: () => void) {
       this.onConnection = this.onConnection.bind(this);
+
+      this.server = server;
 
       //initialize the WebSocket server instance
       this.webSocketServer = new WebSocket.Server({
@@ -79,8 +83,19 @@ export default class Server {
       this.webSocketServer.on('connection', this.onConnection);
    }
 
+   /**
+    * Finaliza o webSocketServer e o HttpServer usados
+    * 
+    * @param cb 
+    */
    close(cb?: (err?: Error) => void) {
-      this.webSocketServer.close(cb);
+      this.webSocketServer.close(wserr => {
+         this.server.close(() => {
+            if (cb) {
+               cb(wserr);
+            }
+         });
+      });
    }
 
    /**

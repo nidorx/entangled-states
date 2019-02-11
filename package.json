@@ -35,7 +35,7 @@
    "jest": {
       "bail": true,
       "notify": true,
-      "verbose": false,
+      "verbose": true,
       "transform": {
          "^.+\\.tsx?$": "ts-jest"
       },
