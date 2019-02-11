@@ -1,5 +1,6 @@
+export { default as Client } from './lib/ClientReact';
 
-export { default as Client } from './lib/Client';
+export { default as ReactIsLoading } from './lib/util/ReactIsLoading';
 
 export { default as ClientStorage } from './lib/storage/ClientStorage';
 export { default as ClientStorageAbstract } from './lib/storage/ClientStorageAbstract';
