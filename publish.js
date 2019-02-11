@@ -81,7 +81,7 @@ function publish(suffix) {
 
    if (suffix === 'node') {
       peerDependencies = {
-         "ws": "^5.2.1"
+         "ws": "^6.1.3"
       };
    } else if (suffix === 'react') {
       peerDependencies = {

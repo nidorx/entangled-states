@@ -7,4 +7,4 @@ before_script:
   - rm -rf ./node_modules package-lock.json
   - npm install
 
-script: travis_wait 20 npm run-script build
+script: npm run-script build
