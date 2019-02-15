@@ -6,11 +6,14 @@ export {
    SyncTopicParams
 } from './lib/Constants';
 
+export {
+   MidleWare,
+   MidleWareEvent,
+   MidleWareContext
+} from './lib/NodeConstants';
 
 export {
    default as Server,
-   MidleWare,
-   MidleWareContext
 } from './lib/Server';
 
 export { default as Client } from './lib/Client';

@@ -1,4 +1,5 @@
 import * as WebSocket from 'ws';
+import { MidleWare } from './NodeConstants';
 
 export type Callback = (data: any, ws: WebSocket, accept: (data?: any) => void, reject: (cause: any, message?: string) => void) => void;
 
@@ -35,6 +36,15 @@ class Actions {
    register(name: string, callback: Callback) {
       this.actions[name] = callback;
    }
+
+   // on(middleware: MidleWare): MidleWare {
+   //    if (!this.middlewares[event]) {
+   //       this.middlewares[event] = [];
+   //    }
+   //    this.middlewares[event].push(middleware);
+
+   //    return middleware;
+   // }
 
 }
 
