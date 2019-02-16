@@ -8,6 +8,16 @@ export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemor
 export { default as ClientStorageReactNative } from './lib/storage/ClientStorageReactNative';
 
 export {
+   default as MidlewareManager,
+   MidleWare
+} from './lib/util/MidlewareManager';
+
+export {
+   default as Logger,
+   LogLevel
+} from './lib/util/Logger';
+
+export {
    default as DTO,
    Delta,
    DeltaObject,

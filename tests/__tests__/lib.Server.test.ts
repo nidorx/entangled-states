@@ -8,6 +8,7 @@ import Actions from '../../src/lib/Actions';
 import Publishers from '../../src/lib/Publishers';
 import ClientStorageMemory from '../../src/lib/storage/ClientStorageMemory';
 import InMemoryRepository from '../../src/lib/repository/InMemoryRepository';
+import Logger from '../../src/lib/util/Logger';
 // import fs from 'fs';
 
 const DB_TOPICS = new InMemoryRepository();
@@ -32,6 +33,7 @@ describe('Server', () => {
       }, 'close');
 
       const client = new Client('ws://localhost:3000', new ClientStorageMemory('test'));
+      // Logger.get('Client').setLevel('TRACE');
       client.connect(() => {
          // finaliza a conexao, deve chamar o 'close' do server
          client.close();
@@ -95,7 +97,6 @@ describe('Server', () => {
             }
          ]
       });
-
 
       Publishers.create({
          topic: 'groupById',
@@ -215,5 +216,4 @@ describe('Server', () => {
          done();
       });
    });
-
 });

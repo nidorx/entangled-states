@@ -1,8 +1,7 @@
-import log from 'loglevel';
 import { ActionResponse, SyncTopicParams } from "./Constants";
 import ClientStorage from "./storage/ClientStorage";
 import DTO from "./util/DTO";
-import { Logger, LogLevelDesc } from 'loglevel';
+import Logger from "./util/Logger";
 
 /**
  * Mensagens provenientes do servidor
@@ -80,7 +79,7 @@ interface SubscriptionState {
  */
 export default class Client {
 
-   private LOGGER: Logger = log.getLogger("Client");
+   private LOGGER: Logger;
 
    /**
     * Identificador das requisições feitas ao servidor
@@ -115,17 +114,7 @@ export default class Client {
    constructor(host: string, storage: ClientStorage) {
       this.host = host;
       this.storage = storage;
-
-      this.LOGGER.trace('Inicializando: host=', host);
-   }
-
-   /**
-    * Permite definir o nível de Log do componente
-    * 
-    * @param level 
-    */
-   setLoggerLevel(level: LogLevelDesc) {
-      this.LOGGER.setLevel(level);
+      this.LOGGER = Logger.get("Client");
    }
 
    /**
@@ -163,9 +152,9 @@ export default class Client {
       this.reconnect = true;
       this.ws = new WebSocket(this.host);
 
-      this.LOGGER.trace('Iniciando conexão');
+      this.LOGGER.trace('Iniciando conexão. { host=', this.host, ' }');
 
-      this.ws.onopen = () => {
+      this.ws.onopen = (event) => {
          if (this.ws) {
             this.LOGGER.trace('Conexão iniciada com sucesso');
 
@@ -177,13 +166,13 @@ export default class Client {
          }
       };
 
-      this.ws.onmessage = (e) => {
+      this.ws.onmessage = (event) => {
          let data: ActionResponse | TopicResponse;
 
-         this.LOGGER.trace('onmessage', e);
+         this.LOGGER.trace('Mensagem recebida. { data=', event.data, ' }');
 
          try {
-            data = JSON.parse(e.data);
+            data = JSON.parse(event.data);
          } catch (e) {
             this.LOGGER.error('Erro ao processar mensagem', e.data);
             return;
@@ -281,13 +270,13 @@ export default class Client {
          }
       };
 
-      this.ws.onerror = (e) => {
+      this.ws.onerror = (event) => {
          // an error occurred
-         this.LOGGER.error('Erro na conexão com o servidor', e);
+         this.LOGGER.error('Erro na conexão com o servidor', event);
       };
 
-      this.ws.onclose = (e) => {
-         this.LOGGER.trace('Conexão WebSocket finalizada', e);
+      this.ws.onclose = (event) => {
+         this.LOGGER.trace('Conexão WebSocket finalizada. { reason="', event.reason, '", code=', event.code, ' }');
 
          // connection closed
          if (this.reconnect) {
@@ -309,7 +298,7 @@ export default class Client {
          return () => { };
       }
 
-      this.LOGGER.trace('Executando a inscrição em um tópico', topic);
+      this.LOGGER.trace('Executando a inscrição em um tópico: { topic=', topic, ' }');
 
       if (!this.subscriptions[topic]) {
          this.subscriptions[topic] = {
@@ -322,7 +311,7 @@ export default class Client {
 
       // Se já possuir dados (OFFLINE), já entrega ao solicitante 
       if (this.subscriptions[topic].data) {
-         this.LOGGER.trace('Possui dados offline já salvo para o tópico', topic);
+         this.LOGGER.trace('Possui dados offline já salvo para o tópico: { topic=', topic, ' }');
 
          callback(this.subscriptions[topic].data);
 
@@ -345,7 +334,7 @@ export default class Client {
                   subscription.dto = DTO.decompress(storageTopic.compressed);
                   subscription.data = subscription.dto.unflatten();
 
-                  this.LOGGER.trace('Possui dados offline no storage do tópico', topic);
+                  this.LOGGER.trace('Possui dados offline no storage do tópico: { topic=', topic, ' }');
 
                   callback(this.subscriptions[topic].data);
                }
@@ -368,7 +357,7 @@ export default class Client {
             return;
          }
 
-         this.LOGGER.trace('Inscrição no tópico foi cancelado', topic);
+         this.LOGGER.trace('Inscrição no tópico foi cancelado: { topic=', topic, ' }');
 
          canceled = true;
          // Remove o listener
@@ -392,7 +381,7 @@ export default class Client {
          return Promise.reject('Client is closed');
       }
 
-      this.LOGGER.trace('Executando uma ação', action, data);
+      this.LOGGER.trace('Executando uma ação { action=', action, ', data=', data, ' }');
 
       const requestId = `${Client.REQUEST_SEQUENCE.id++}`;
       const promise = new Promise<any>((accept, reject) => {
@@ -463,7 +452,7 @@ export default class Client {
          return;
       }
 
-      this.LOGGER.trace('Sincronizando um tópico específico', topic);
+      this.LOGGER.trace('Sincronizando um tópico específico: { topic=', topic, ' }');
 
       let data = {
          topic: topic,

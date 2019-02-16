@@ -9,6 +9,16 @@ export { default as ClientStorageWebLocal } from './lib/storage/ClientStorageWeb
 export { default as ClientStorageWebSession } from './lib/storage/ClientStorageWebSession';
 
 export {
+   default as MidlewareManager,
+   MidleWare
+} from './lib/util/MidlewareManager';
+
+export {
+   default as Logger,
+   LogLevel
+} from './lib/util/Logger';
+
+export {
    default as DTO,
    Delta,
    DeltaObject,

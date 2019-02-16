@@ -16,6 +16,11 @@ export {
 } from './lib/util/MidlewareManager';
 
 export {
+   default as Logger,
+   LogLevel
+} from './lib/util/Logger';
+
+export {
    default as Server,
    ServerMidleWare,
    ServerMidleWareEvent,
