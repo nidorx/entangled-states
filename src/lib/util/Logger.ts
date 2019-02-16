@@ -2,6 +2,8 @@
 
 export type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'OFF';
 
+let COUNTER = Date.now() % 1e9;
+
 const LEVELS = {
    'TRACE': 0,
    'DEBUG': 1,
@@ -119,11 +121,13 @@ export default class Logger {
       METHODS[level](out.join(''));
    }
 
+   
+
    /**
     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value
     */
    private getCircularReplacer() {
-      const seen = new WeakSet();
+      const ID = '__st' + (Math.random() * 1e9 >>> 0) + (COUNTER++ + '__');
       return (key: string, value: any) => {
          if (typeof value === "object"
             && value !== null
@@ -133,10 +137,10 @@ export default class Logger {
             && !(value instanceof RegExp)
             && !(value instanceof String)
          ) {
-            if (seen.has(value)) {
+            if (!!value[ID]) {
                return '';
             }
-            seen.add(value);
+            Object.defineProperty(value, ID, { value: true, writable: true });
          }
          return value;
       };
