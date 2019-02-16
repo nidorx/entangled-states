@@ -28,7 +28,7 @@
 
 **websocket-pubsub** é uma biblioteca que tem o objetivo de facilitar o desenvolvimento de aplicações dinâmicas por meio dos padrões [pub-sub/ Publish–Subscribe ](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) com [Tópicos](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern#Message_filtering) e [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call) utilizando o protocolo [WebSocket](https://en.wikipedia.org/wiki/WebSocket).
 
-A transfência das mensagens entre Cliente e Servidor é feito de forma compactada, usando um algoritmo de [Delta Encoding](https://en.wikipedia.org/wiki/Delta_encoding) que garante o transporte apenas da diferença existente entre os dados conhecidos pelo cliente com os novos dados publicados no servidor, diminuindo o consumo de banda e latencia.   
+A transfência das mensagens entre Cliente e Servidor é feito de forma compactada, usando um algoritmo de [Delta Encoding](https://en.wikipedia.org/wiki/Delta_encoding) ([diff & patch](https://en.wikipedia.org/wiki/Diff)) que garante o transporte apenas da diferença existente entre os dados conhecidos pelo cliente com os novos dados publicados no servidor, diminuindo o consumo de banda e latencia.   
 
 O **websocket-pubsub** pode ser usado em páginas Web/[PWA](https://developers.google.com/web/progressive-web-apps/), aplicativos Mobile ([React Native](https://facebook.github.io/react-native/) e soluções baseadas em [WebView](https://ionicframework.com/docs/building/webview/) [como [Ionic](https://ionicframework.com/) e aplicações geradas com uso do [Cordova](https://cordova.apache.org/)/[Phonegap](https://phonegap.com/)]) e integração entre servidores Node.js.
 

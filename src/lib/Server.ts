@@ -1,31 +1,77 @@
 import * as http from 'http';
 import * as WebSocket from 'ws';
-import { Server as HttpServer } from "http";
-import { ServerOptions } from 'ws';
 import Topic from "./Topic";
 import Actions from "./Actions";
+import { ConnectionContext } from './NodeConstants';
 import { ActionResponse, ActionRequest } from "./Constants";
+import MidlewareManager, { MidleWare } from './util/MidlewareManager';
+
 const stoppable = require('stoppable');
 
 // Import default actions
 import './actions/syncTopicAction';
 import './actions/syncTopicsAction';
-import { MidleWare, MidleWareEvent, MidleWareContext } from './NodeConstants';
 
-interface ConnectionContext {
+/**
+ * Contexto disponíveis no Midleware do server
+ */
+export type ServerMidleWareContext = {
+   /**
+    * A conexão com o Client
+    */
    ws: WebSocket;
+   /**
+    * Dados da requisição
+    */
    request: http.IncomingMessage;
-}
+};
 
+/**
+ * Contexto disponíveis no Midleware de Mensagens
+ */
+export type ServerMidleWareMessageContext = ServerMidleWareContext & {
+   /**
+    * Dados da meensagem.
+    */
+   data: WebSocket.Data;
+};
+
+/**
+ * Contexto disponíveis no Midleware de fechamento de conexões
+ */
+export type ServerMidleWareCloseContext = ServerMidleWareContext & {
+   /**
+     * Código da desconexão.
+     */
+   code: number;
+   /**
+    * Razão da desconexão.
+    */
+   reason: string;
+};
+
+/**
+ * Os eventos possíveis de uso de Midlewares no server
+ */
+export type ServerMidleWareEvent = 'message' | 'close' | 'connection' | 'upgrade' | '*';
+
+/**
+ * Tipagem dos Midlewares de actions
+ */
+export type ServerMidleWare = MidleWare<ServerMidleWareContext | ServerMidleWareMessageContext | ServerMidleWareCloseContext>;
+
+/**
+ * Servidor do Websocket-pubsub, faz gerenciamento de conexões e todo o tratamento necessário para o funcionamento da biblioteca
+ */
 export default class Server {
+
+   server: http.Server;
 
    webSocketServer: WebSocket.Server;
 
-   server: HttpServer;
+   private middlewares: MidlewareManager<ServerMidleWareContext | ServerMidleWareMessageContext | ServerMidleWareCloseContext> = new MidlewareManager();
 
-   middlewares: { [key: string]: Array<MidleWare> } = {};
-
-   constructor(server: HttpServer, options?: ServerOptions, callback?: () => void) {
+   constructor(server: http.Server, options?: WebSocket.ServerOptions, callback?: () => void) {
       this.onConnection = this.onConnection.bind(this);
 
       this.server = stoppable(server);
@@ -40,7 +86,7 @@ export default class Server {
    }
 
    /**
-    * Finaliza o webSocketServer e o HttpServer usados
+    * Finaliza o webSocketServer e o http.Server usados
     * 
     * @param cb 
     */
@@ -55,13 +101,8 @@ export default class Server {
     * 
     * @param middleware 
     */
-   on(event: MidleWareEvent, middleware: MidleWare): MidleWare {
-      if (!this.middlewares[event]) {
-         this.middlewares[event] = [];
-      }
-      this.middlewares[event].push(middleware);
-
-      return middleware;
+   use(middleware: ServerMidleWare | Array<ServerMidleWare>, event?: ServerMidleWareEvent): void {
+      this.middlewares.add(middleware, event);
    }
 
    /**
@@ -70,19 +111,13 @@ export default class Server {
     * @param event 
     * @param middleware 
     */
-   off(event: MidleWareEvent, middleware: MidleWare) {
-      if (!this.middlewares[event]) {
-         return;
-      }
-      const idx = this.middlewares[event].indexOf(middleware);
-      if (idx >= 0) {
-         this.middlewares[event].splice(idx, 1);
-      }
+   removeMidleware(middleware: ServerMidleWare, event?: ServerMidleWareEvent) {
+      this.middlewares.remove(middleware, event);
    }
 
    private onConnection(ws: WebSocket, request: http.IncomingMessage) {
 
-      this.execMidleware('connection', { ws, request })
+      this.middlewares.exec('connection', { ws, request })
          .then(() => {
 
             const context: ConnectionContext = {
@@ -107,7 +142,7 @@ export default class Server {
          context.ws = uws;
          context.request = urequest;
 
-         this.execMidleware('upgrade', { ws: context.ws, request: context.request });
+         this.middlewares.exec('upgrade', { ws: context.ws, request: context.request });
       }
    }
 
@@ -118,7 +153,7 @@ export default class Server {
             topic.unsubscribe(context.ws);
          });
 
-         this.execMidleware('close', {
+         this.middlewares.exec('close', {
             ws: context.ws,
             request: context.request,
             code: code,
@@ -129,22 +164,28 @@ export default class Server {
 
    private createHandleOnMessage(context: ConnectionContext) {
       return (data: WebSocket.Data) => {
-         const messageMidContext = {
+
+         const midContext: ServerMidleWareMessageContext = {
             ws: context.ws,
             request: context.request,
             data: data
-         }
+         };
 
-         this.execMidleware('message', messageMidContext).then(() => {
-            const msg = data as string;
+         this.middlewares.exec('message', midContext).then(() => {
             let request: ActionRequest;
 
-
-            try {
-               request = JSON.parse(msg);
-            } catch (e) {
-               console.warn('Erro ao processar mensagem', msg);
-               return;
+            // Algum midleware pode modificar os dados de entrada.
+            // Desde que mantenha a estrutura, é permitido
+            if (typeof midContext.data === 'string') {
+               const msg = midContext.data as string;
+               try {
+                  request = JSON.parse(msg);
+               } catch (e) {
+                  console.warn('Erro ao processar mensagem', msg);
+                  return;
+               }
+            } else {
+               request = midContext.data as any;
             }
 
             if (!request.action) {
@@ -157,18 +198,12 @@ export default class Server {
       }
    }
 
+   /**
+    * Faz a execução dos Midelewares e Tratamento de um action
+    */
    private execAction(context: ConnectionContext, request: ActionRequest) {
 
-      const actionContext = {
-         ws: context.ws,
-         request: context.request,
-         actionData: request.data,
-         actionName: request.action,
-         actionRequestId: request.id
-      };
-
-      this.execMidleware('action', actionContext)
-         .then(() => Actions.exec(request.action, request.data, context.ws))
+      Actions.exec(context, request)
          .then(data => {
 
             // Envia a resposta ao solicitante
@@ -178,7 +213,6 @@ export default class Server {
                   data: data
                } as ActionResponse));
             }
-
          })
          .catch(cause => {
             // Envia o erro ao solicitante
@@ -190,46 +224,5 @@ export default class Server {
                } as ActionResponse));
             }
          });
-   }
-
-   /**
-    * Executa um midelware para o evento informado
-    * 
-    * Se o Midleware não acionar o next, o Promise nunca é resolvido (portanto, ignorado)
-    * 
-    * @param event 
-    * @param context 
-    */
-   private execMidleware(event: string, context: MidleWareContext): Promise<any> {
-      return new Promise<any>((resolve, reject) => {
-         if (!this.middlewares[event] || this.middlewares[event].length === 0) {
-            return resolve();
-         }
-
-         const middlewares = this.middlewares[event];
-
-         // last called middleware #
-         let index = -1
-         dispatch(0);
-
-         function dispatch(actual: number, ) {
-            if (actual <= index) {
-               // next() called multiple times
-               return;
-            }
-
-            index = actual;
-
-            if (actual === middlewares.length) {
-               return resolve();
-            }
-
-            try {
-               middlewares[actual](context, dispatch.bind(null, actual + 1));
-            } catch (err) {
-               reject(err);
-            }
-         }
-      });
    }
 }

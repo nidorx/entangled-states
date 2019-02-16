@@ -7,13 +7,21 @@ export {
 } from './lib/Constants';
 
 export {
-   MidleWare,
-   MidleWareEvent,
-   MidleWareContext
+   ConnectionContext
 } from './lib/NodeConstants';
 
 export {
+   default as MidlewareManager,
+   MidleWare
+} from './lib/util/MidlewareManager';
+
+export {
    default as Server,
+   ServerMidleWare,
+   ServerMidleWareEvent,
+   ServerMidleWareContext,
+   ServerMidleWareCloseContext,
+   ServerMidleWareMessageContext
 } from './lib/Server';
 
 export { default as Client } from './lib/Client';
@@ -25,7 +33,12 @@ export { default as ClientStorage } from './lib/storage/ClientStorage';
 export { default as ClientStorageAbstract } from './lib/storage/ClientStorageAbstract';
 export { default as ClientStorageMemory } from './lib/storage/ClientStorageMemory';
 
-export { default as Actions, Callback } from './lib/Actions';
+export {
+   default as Actions,
+   ActionCallback,
+   ActionMidleWare,
+   ActionMidleWareContext
+} from './lib/Actions';
 
 export { default as Publishers, QueryConfig, Config } from './lib/Publishers';
 

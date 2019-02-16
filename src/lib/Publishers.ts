@@ -77,6 +77,8 @@ export interface Config {
 
 /**
  * Permite criação e invocação de publicadores
+ * 
+ * @TODO: Permitir adicionar MidleWares nos publicadores
  */
 class Publishers {
 

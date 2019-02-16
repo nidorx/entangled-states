@@ -20,16 +20,16 @@ describe('Server', () => {
 
    it('Deve permitir e gerenciar a conexão e desconexão de clientes', async (done) => {
 
-      const onConnection = server.on('connection', (ctx, next) => {
+      server.use((ctx, next) => {
          next();
-      });
+      }, 'connection');
 
-      const onClose = server.on('close', (ctx, next) => {
+      server.use((ctx, next) => {
          // Se esse ponto não for invocado, vai estourar timeout
          done();
 
          next();
-      });
+      }, 'close');
 
       const client = new Client('ws://localhost:3000', new ClientStorageMemory('test'));
       client.connect(() => {

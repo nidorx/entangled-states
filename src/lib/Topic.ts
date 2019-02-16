@@ -116,6 +116,8 @@ export interface TopicState extends TopicData {
 
 /**
  * Tópico genérico
+ * 
+ * @TODO: Permitir adicionar Midlewares nos tópicos
  */
 export default class Topic {
 
