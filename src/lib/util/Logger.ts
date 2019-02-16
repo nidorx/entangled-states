@@ -110,7 +110,7 @@ export default class Logger {
          } else if (arg === undefined) {
             out.push("undefined");
          } else if (typeof arg === 'object') {
-            out.push(JSON.stringify(arg));
+            out.push(JSON.stringify(arg, this.getCircularReplacer(), 2));
          } else {
             out.push(arg + '');
          }
@@ -118,4 +118,27 @@ export default class Logger {
 
       METHODS[level](out.join(''));
    }
+
+   /**
+    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value
+    */
+   private getCircularReplacer() {
+      const seen = new WeakSet();
+      return (key: string, value: any) => {
+         if (typeof value === "object"
+            && value !== null
+            && !(value instanceof Boolean)
+            && !(value instanceof Date)
+            && !(value instanceof Number)
+            && !(value instanceof RegExp)
+            && !(value instanceof String)
+         ) {
+            if (seen.has(value)) {
+               return '';
+            }
+            seen.add(value);
+         }
+         return value;
+      };
+   };
 }
