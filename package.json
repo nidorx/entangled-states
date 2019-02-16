@@ -1,6 +1,6 @@
 {
    "name": "websocket-pubsub",
-   "version": "0.0.34",
+   "version": "0.0.35",
    "description": "Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade",
    "main": "dist/node.js",
    "repository": {
