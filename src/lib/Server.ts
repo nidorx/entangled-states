@@ -24,6 +24,10 @@ export type ServerMidleWareContext = {
     * Dados da requisição
     */
    request: http.IncomingMessage;
+   /**
+    * Evento que originou a execução desse midleware
+    */
+   event: 'message' | 'close' | 'connection' | 'upgrade';
 };
 
 /**
@@ -117,7 +121,7 @@ export default class Server {
 
    private onConnection(ws: WebSocket, request: http.IncomingMessage) {
 
-      this.middlewares.exec('connection', { ws, request })
+      this.middlewares.exec('connection', { ws, request, event: 'connection' })
          .then(() => {
 
             const context: ConnectionContext = {
@@ -142,7 +146,11 @@ export default class Server {
          context.ws = uws;
          context.request = urequest;
 
-         this.middlewares.exec('upgrade', { ws: context.ws, request: context.request });
+         this.middlewares.exec('upgrade', {
+            event: 'upgrade',
+            ws: context.ws,
+            request: context.request
+         });
       }
    }
 
@@ -154,6 +162,7 @@ export default class Server {
          });
 
          this.middlewares.exec('close', {
+            event: 'close',
             ws: context.ws,
             request: context.request,
             code: code,
@@ -166,6 +175,7 @@ export default class Server {
       return (data: WebSocket.Data) => {
 
          const midContext: ServerMidleWareMessageContext = {
+            event: 'message',
             ws: context.ws,
             request: context.request,
             data: data
