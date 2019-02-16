@@ -1,13 +1,13 @@
-<div align="center">
+<p align="center">
   <h1>websocket-pubsub</h1>
   <h4>[ <font color="red">ATENÇÃO! EM DESENVOLVIMENTO </font> ]</h4>
-</div>
+</p>
 
-<div align="center">
+<p align="center">
   <h5><code>
   Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade
   </code></h5>
-</div>
+</p>
 
 <br>
 
