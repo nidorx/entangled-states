@@ -1,6 +1,6 @@
 {
    "name": "entangled-states",
-   "version": "0.0.41",
+   "version": "0.0.42",
    "description": "Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade",
    "main": "dist/node.js",
    "repository": {
