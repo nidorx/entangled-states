@@ -2,7 +2,7 @@ import Repository from "./Repository";
 import { AnyObject } from "../Constants";
 
 /**
- * Data Store em memória, facilita o desenvolvimento de Mock de funcionalidades
+ * Repositório em memória, facilita o desenvolvimento de Mock de funcionalidades
  */
 export default class InMemoryRepository<T> extends Repository<(T & AnyObject)> {
 

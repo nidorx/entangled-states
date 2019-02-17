@@ -78,23 +78,21 @@ interface SubscriptionState {
  * Implementa um mecanismo de sincronização com o servidor, informando ao mesmo sobre a ultima versão recebida de cada tópico
  */
 export default class Client {
-
-   private LOGGER: Logger;
-
+   
    /**
     * Identificador das requisições feitas ao servidor
     */
    static REQUEST_SEQUENCE = { id: Date.now() };
-
+   
    private ws: WebSocket | undefined;
-
+   
    private reconnect = true;
 
    /**
     * Deixa salvo as inscrições em tópicos, em problema de conexão, solicita novamente a subscriçao
     */
    private subscriptions: { [key: string]: SubscriptionState } = {};
-
+   
    /**
     * Permite receber resposta para uma execução
     */
@@ -106,22 +104,24 @@ export default class Client {
    } = {};
 
    private timeouts: Array<number> = [];
-
+   
    private host: string;
-
+   
    private storage: ClientStorage;
+
+   protected logger: Logger;
 
    constructor(host: string, storage: ClientStorage) {
       this.host = host;
       this.storage = storage;
-      this.LOGGER = Logger.get("entangled-states.Client");
+      this.logger = Logger.get("entangled-states.Client");
    }
 
    /**
     * Quando invocado, não será mais criado novas conexões
     */
    close() {
-      this.LOGGER.trace('Fechando conexão');
+      this.logger.trace('Fechando conexão');
 
       this.reconnect = false;
 
@@ -152,11 +152,11 @@ export default class Client {
       this.reconnect = true;
       this.ws = new WebSocket(this.host);
 
-      this.LOGGER.trace('Iniciando conexão. { host=', this.host, ' }');
+      this.logger.trace('Iniciando conexão. { host=', this.host, ' }');
 
       this.ws.onopen = (event) => {
          if (this.ws) {
-            this.LOGGER.trace('Conexão iniciada com sucesso');
+            this.logger.trace('Conexão iniciada com sucesso');
 
             // connection opened
             this.syncTopics();
@@ -169,12 +169,12 @@ export default class Client {
       this.ws.onmessage = (event) => {
          let data: ActionResponse | TopicResponse;
 
-         this.LOGGER.trace('Mensagem recebida. { data=', event.data, ' }');
+         this.logger.trace('Mensagem recebida. { data=', event.data, ' }');
 
          try {
             data = JSON.parse(event.data);
          } catch (e) {
-            this.LOGGER.error('Erro ao processar mensagem', e.data);
+            this.logger.error('Erro ao processar mensagem', e.data);
             return;
          }
 
@@ -226,7 +226,7 @@ export default class Client {
             //  3 - Compressão 
             // ==================================================================
             if (message.delta) {
-               this.LOGGER.trace('Delta de mensagem recebida');
+               this.logger.trace('Delta de mensagem recebida');
 
                if (message.deltaSeq === subscription.seq) {
                   // É o diff correto
@@ -238,7 +238,7 @@ export default class Client {
                   this.syncTopic(message.topic);
                }
             } else {
-               this.LOGGER.trace('Mensagem completa recebida');
+               this.logger.trace('Mensagem completa recebida');
 
                // Mensagem completa
                update = true;
@@ -272,15 +272,15 @@ export default class Client {
 
       this.ws.onerror = (event) => {
          // an error occurred
-         this.LOGGER.error('Erro na conexão com o servidor');
+         this.logger.error('Erro na conexão com o servidor');
       };
 
       this.ws.onclose = (event) => {
-         this.LOGGER.trace('Conexão WebSocket finalizada. { reason="', event.reason, '", code=', event.code, ' }');
+         this.logger.trace('Conexão WebSocket finalizada. { reason="', event.reason, '", code=', event.code, ' }');
 
          // connection closed
          if (this.reconnect) {
-            this.LOGGER.trace('Reiniciando a conexão com o WebSocket');
+            this.logger.trace('Reiniciando a conexão com o WebSocket');
 
             // Faz nova conexão
             this.setTimeout(this.connect.bind(this), 10);
@@ -298,7 +298,7 @@ export default class Client {
          return () => { };
       }
 
-      this.LOGGER.trace('Executando a inscrição em um tópico: { topic=', topic, ' }');
+      this.logger.trace('Executando a inscrição em um tópico: { topic=', topic, ' }');
 
       if (!this.subscriptions[topic]) {
          this.subscriptions[topic] = {
@@ -311,7 +311,7 @@ export default class Client {
 
       // Se já possuir dados (OFFLINE), já entrega ao solicitante 
       if (this.subscriptions[topic].data) {
-         this.LOGGER.trace('Possui dados offline já salvo para o tópico: { topic=', topic, ' }');
+         this.logger.trace('Possui dados offline já salvo para o tópico: { topic=', topic, ' }');
 
          callback(this.subscriptions[topic].data);
 
@@ -334,7 +334,7 @@ export default class Client {
                   subscription.dto = DTO.decompress(storageTopic.compressed);
                   subscription.data = subscription.dto.unflatten();
 
-                  this.LOGGER.trace('Possui dados offline no storage do tópico: { topic=', topic, ' }');
+                  this.logger.trace('Possui dados offline no storage do tópico: { topic=', topic, ' }');
 
                   callback(this.subscriptions[topic].data);
                }
@@ -357,7 +357,7 @@ export default class Client {
             return;
          }
 
-         this.LOGGER.trace('Inscrição no tópico foi cancelado: { topic=', topic, ' }');
+         this.logger.trace('Inscrição no tópico foi cancelado: { topic=', topic, ' }');
 
          canceled = true;
          // Remove o listener
@@ -381,7 +381,7 @@ export default class Client {
          return Promise.reject('Client is closed');
       }
 
-      this.LOGGER.trace('Executando uma ação { action=', action, ', data=', data, ' }');
+      this.logger.trace('Executando uma ação { action=', action, ', data=', data, ' }');
 
       const requestId = `${Client.REQUEST_SEQUENCE.id++}`;
       const promise = new Promise<any>((accept, reject) => {
@@ -423,7 +423,7 @@ export default class Client {
          return;
       }
 
-      this.LOGGER.trace('Sincronizando todos os tópicos');
+      this.logger.trace('Sincronizando todos os tópicos');
 
       const data = Object.keys(this.subscriptions)
          .map(topic => {
@@ -452,7 +452,7 @@ export default class Client {
          return;
       }
 
-      this.LOGGER.trace('Sincronizando um tópico específico: { topic=', topic, ' }');
+      this.logger.trace('Sincronizando um tópico específico: { topic=', topic, ' }');
 
       let data = {
          topic: topic,

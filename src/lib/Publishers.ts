@@ -12,41 +12,43 @@ const EXEC_LIMIT_TIMEOUT = 100;
  */
 export interface QueryConfig {
    /**
-   * Banco de dados que possui a informação
+   * Repositório que possui os dados desejados nesta consulta
    */
    repository: Repository<any>;
    /**
-    * Os parametros de consulta no store
-    *
-    * Quando o tópico for por id, pode se usar o formato query:{ nomeCampo : '$id' }. O $id será substituido pelo valor informado na publicação
+    * Os parametros de consulta no store.
+    * 
+    * Quando o Tópico é COM IDENTIFICADOR os parametros com valor = $id serão substituidos pelo identificador do tópico. Ex. query:{ idCategoria : '$id' }.
     */
    params?: AnyObject;
    /**
-    * Permite adicionar configurações adicionais que serão avalidadas pelo storage
+    * Permite configurar opções adicionais do Repositório usado
     */
    options?: AnyObject;
    /**
-    * Informa que dever retornar apenas um resultado (findOne)
+    * Permite definir se o resultado dessa consulta será um array ou uma entidade única. 
+    * 
+    * Se TRUE usará o método findOne do Repositório, se FALSE usará o método find. O valor padrão é FALSE.
     */
    singleResult?: boolean;
    /**
-    * Após a recuperação, permite adicionar um filtro mais sofisticado
+    * Após consultar os registros, permite realizar um filtro em memória.
     * 
     * Não se aplica quando singleResult=true
     */
    filter?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => boolean;
    /**
-    * Após filtrar os valores, permite visitar cada um dos itens
+    * Após filtrar os registros, permite visitar cada um dos itens.
     * 
     * Não se aplica quando singleResult=true
     */
    forEach?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => void;
    /**
-    * Permite mapear o resultado para outra estrutura de dados
+    * Permite mapear o resultado para outra estrutura de dados diferente da disponibilizada pelo Repositório
     */
    map?: (row: AnyObject, index: number, rows: Array<AnyObject>, prevResults: Array<any>) => any;
    /**
-    * Permite extrair o valor de saída, a partir dos resultado atual e anteriores
+    * Permite extrair um ÚNICO valor de saída, a partir dos resultado da Query atual e das Queries anteriores.
     */
    extract?: (rows: Array<AnyObject>, prevResults: Array<any>) => AnyObject;
 }
@@ -54,7 +56,7 @@ export interface QueryConfig {
 /**
  * Configurações de um publisher
  */
-export interface Config {
+export interface PublisherConfig {
    /**
     * Nome do tópico
     */
@@ -109,7 +111,7 @@ class Publishers {
     * @param name 
     * @param callback 
     */
-   create(config: Config) {
+   create(config: PublisherConfig) {
       let topic = config.topic;
       const byId = config.idRequired;
 
@@ -216,10 +218,10 @@ class Publishers {
       const repository = config.repository;
       const params = { ...(config.params || {}) };
       const options = { ...(config.options || {}) };
-      const filter = config.filter;
-      const forEach = config.forEach;
-      const map = config.map;
-      const extract = config.extract;
+      const fnFilter = config.filter;
+      const fnForEach = config.forEach;
+      const fnMap = config.map;
+      const fnExtract = config.extract;
 
       return new Promise<Array<any>>((accept, reject) => {
 
@@ -229,12 +231,12 @@ class Publishers {
             repository.findOne(params, options)
                .then((doc) => {
 
-                  if (map && doc !== undefined) {
-                     doc = map(doc, 0, [doc], prevResults);
+                  if (fnMap && doc !== undefined) {
+                     doc = fnMap(doc, 0, [doc], prevResults);
                   }
 
-                  if (extract && doc !== undefined) {
-                     doc = extract([doc], prevResults);
+                  if (fnExtract && doc !== undefined) {
+                     doc = fnExtract([doc], prevResults);
                   }
 
                   accept(doc !== undefined ? [doc] : []);
@@ -246,26 +248,26 @@ class Publishers {
             repository.find(params, options)
                .then((docs) => {
                   if (docs) {
-                     if (filter) {
+                     if (fnFilter) {
                         docs = docs.filter((value, index, array) => {
-                           return filter(value, index, array, prevResults);
+                           return fnFilter(value, index, array, prevResults);
                         });
                      }
 
-                     if (forEach) {
+                     if (fnForEach) {
                         docs.forEach((value, index, array) => {
-                           forEach(value, index, array, prevResults);
+                           fnForEach(value, index, array, prevResults);
                         });
                      }
 
-                     if (map) {
+                     if (fnMap) {
                         docs = docs.map((value, index, array) => {
-                           return map(value, index, array, prevResults);
+                           return fnMap(value, index, array, prevResults);
                         });
                      }
 
-                     if (extract) {
-                        docs = [extract(docs, prevResults)];
+                     if (fnExtract) {
+                        docs = [fnExtract(docs, prevResults)];
                      }
                   }
 

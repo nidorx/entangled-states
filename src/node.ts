@@ -45,7 +45,11 @@ export {
    ActionMidleWareContext
 } from './lib/Actions';
 
-export { default as Publishers, QueryConfig, Config } from './lib/Publishers';
+export {
+   default as Publishers,
+   QueryConfig,
+   PublisherConfig
+} from './lib/Publishers';
 
 export { default as Topic, TopicState, TopicResponse, TopicSubscriber } from './lib/Topic';
 

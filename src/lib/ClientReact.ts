@@ -26,8 +26,10 @@ export default class ClientReact extends Client {
     */
    inject(component: React.Component, topic: string, callback: (data: any) => void): () => void {
 
+      this.logger.trace('ClientReact injetando no componente. { topic=', topic, 'componente=', component, ' }');
+      
       let componentUnmounted = false;
-
+      
       const cancel = this.subscribe(topic, (data) => {
          if (componentUnmounted) {
             cancel();
