@@ -1,14 +1,26 @@
 
-export type MidleWare<T> = (context: T, next: () => void) => void;
+export type MidleWare<T> = (context: T, next: (err?: any) => void) => void;
+
 
 /**
  * Gerenciador de Midlewares genérico
  */
 export default class MidlewareManager<T> {
 
+   private count: number;
+
+   private counterId: string;
+
    private middlewares: { [key: string]: Array<MidleWare<T>> } = {
       '*': []
    };
+
+   constructor() {
+      this.count = 0;
+      // Nome da propriedade usada para ordenação de execução deste Midleware
+      // Um mesmo Midleware pode ser usado em outras funcionalidades, cada contador é único por instancia de MidlewareManager
+      this.counterId = '__midlewareOrder' + (Math.random() * 1e9 >>> 0) + '__';
+   }
 
    /**
     * Permite adicionar Midlewares 
@@ -33,6 +45,7 @@ export default class MidlewareManager<T> {
          if (middleware === null || middleware === undefined || typeof middleware !== 'function') {
             return;
          }
+         Object.defineProperty(middleware, this.counterId, { value: this.count++ });
          this.middlewares[name as string].push(middleware);
       });
 
@@ -79,7 +92,7 @@ export default class MidlewareManager<T> {
     * @param event 
     * @param context 
     */
-   exec(names: string | Array<string>, context: T): Promise<any> {
+   exec(names: string | Array<string>, context: T): Promise<T> {
 
       let middlewares: Array<MidleWare<T>> = (this.middlewares['*'] || []);
 
@@ -93,13 +106,29 @@ export default class MidlewareManager<T> {
          middlewares = middlewares.concat(this.middlewares[name] || []);
       });
 
+      // Define a ordem de execução dos Midlewares
+      middlewares.sort((a: any, b: any) => {
+         return a[this.counterId] - b[this.counterId];
+      });
+
+      // Remove duplicidades
+      middlewares = middlewares.filter((value, index, self) => {
+         return self.indexOf(value) === index;
+      });
+
       return new Promise<any>((resolve, reject) => {
          // last called middleware #
          let index = -1
-         dispatch(0);
 
-         function dispatch(actual: number, ) {
+         dispatch(0, null);
+
+         function dispatch(actual: number, err: any) {
+            if (err) {
+               return reject(err);
+            }
+
             if (actual <= index) {
+               console.error('next() called multiple times');
                // next() called multiple times
                return;
             }
@@ -107,7 +136,7 @@ export default class MidlewareManager<T> {
             index = actual;
 
             if (actual === middlewares.length) {
-               return resolve();
+               return resolve(context);
             }
 
             try {
