@@ -3,9 +3,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const Actions = require('websocket-pubsub').Actions;
-const Publishers = require('websocket-pubsub').Publishers;
-const PubSubServer = require('websocket-pubsub').PubSubServer;
+const Actions = require('entangled-states').Actions;
+const Publishers = require('entangled-states').Publishers;
+const PubSubServer = require('entangled-states').PubSubServer;
 
 
 const PUBLIC_DIR = path.join(__dirname, '/public');

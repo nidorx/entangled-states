@@ -75,7 +75,7 @@ rimraf('./dist', {}, function (err) {
 function publish(suffix) {
 
    package.main = 'dist/' + suffix + '.js';
-   package.name = 'websocket-pubsub' + (suffix === 'node' ? '' : ('-' + suffix));
+   package.name = 'entangled-states' + (suffix === 'node' ? '' : ('-' + suffix));
 
    let peerDependencies;
 

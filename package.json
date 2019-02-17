@@ -1,11 +1,11 @@
 {
-   "name": "websocket-pubsub",
+   "name": "entangled-states",
    "version": "0.0.39",
    "description": "Solução de PubSub & RPC usando WebSocket e node.js para aplicações de baixa e média complexidade",
    "main": "dist/node.js",
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/nidorx/websocket-pubsub.git"
+      "url": "git+https://github.com/nidorx/entangled-states.git"
    },
    "files": [
       "dist",

@@ -114,7 +114,7 @@ export default class Client {
    constructor(host: string, storage: ClientStorage) {
       this.host = host;
       this.storage = storage;
-      this.LOGGER = Logger.get("Client");
+      this.LOGGER = Logger.get("entangled-states.Client");
    }
 
    /**
@@ -272,7 +272,7 @@ export default class Client {
 
       this.ws.onerror = (event) => {
          // an error occurred
-         this.LOGGER.error('Erro na conexão com o servidor', event);
+         this.LOGGER.error('Erro na conexão com o servidor');
       };
 
       this.ws.onclose = (event) => {

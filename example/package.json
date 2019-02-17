@@ -1,5 +1,5 @@
 {
-   "name": "websocket-pubsub-example",
+   "name": "entangled-states-example",
    "version": "0.0.1",
    "main": "index.js",
    "scripts": {
@@ -8,7 +8,7 @@
    "author": "Alex Rodin <contato@alexrodin.info>",
    "license": "MIT",
    "dependencies": {
-      "websocket-pubsub": "*",
+      "entangled-states": "*",
       "express": "^4.16.3",
       "ws": "^5.2.1"
    }
