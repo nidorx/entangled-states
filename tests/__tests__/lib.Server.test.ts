@@ -8,12 +8,6 @@ import Actions from '../../src/lib/Actions';
 import Publishers from '../../src/lib/Publishers';
 import ClientStorageMemory from '../../src/lib/storage/ClientStorageMemory';
 import InMemoryRepository from '../../src/lib/repository/InMemoryRepository';
-import Logger from '../../src/lib/util/Logger';
-// import fs from 'fs';
-
-const DB_TOPICS = new InMemoryRepository();
-const DB_GROUPS = new InMemoryRepository();
-const DB_USERS = new InMemoryRepository();
 
 describe('Server', () => {
 
@@ -79,6 +73,9 @@ describe('Server', () => {
       const app = express();
       const httpServer = http.createServer(app);
 
+      const DB_TOPICS = new InMemoryRepository();
+      const DB_GROUPS = new InMemoryRepository();
+      const DB_USERS = new InMemoryRepository();
 
       // Configura o storage dos topicos
       Topic.setStorage(DB_TOPICS);

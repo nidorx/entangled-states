@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as WebSocket from 'ws';
 import Topic from "./Topic";
 import Actions from "./Actions";
+import Logger from "./util/Logger";
 import { ConnectionContext } from './NodeConstants';
 import { ActionResponse, ActionRequest } from "./Constants";
 import MidlewareManager, { MidleWare } from './util/MidlewareManager';
@@ -69,16 +70,21 @@ export type ServerMidleWare = MidleWare<ServerMidleWareContext | ServerMidleWare
  */
 export default class Server {
 
-   server: http.Server;
+   protected logger: Logger;
 
-   webSocketServer: WebSocket.Server;
+   private server: http.Server;
+
+   private webSocketServer: WebSocket.Server;
 
    private middlewares: MidlewareManager<ServerMidleWareContext | ServerMidleWareMessageContext | ServerMidleWareCloseContext> = new MidlewareManager();
 
    constructor(server: http.Server, options?: WebSocket.ServerOptions, callback?: () => void) {
-      this.onConnection = this.onConnection.bind(this);
-
       this.server = stoppable(server);
+
+      this.logger = Logger.get("entangled-states.Server");
+
+      // bindings
+      this.onConnection = this.onConnection.bind(this);
 
       //initialize the WebSocket server instance
       this.webSocketServer = new WebSocket.Server({
@@ -95,6 +101,7 @@ export default class Server {
     * @param cb 
     */
    close(cb?: (err?: Error) => void) {
+      this.logger.trace('Finalizando Server');
       (this.server as any).stop(cb);
    }
 
@@ -121,19 +128,22 @@ export default class Server {
 
    private onConnection(ws: WebSocket, request: http.IncomingMessage) {
 
+      this.logger.trace('Nova conexão efetuada: { url="', request.url, '", headers=', request.headers, ' }');
+
       this.middlewares.exec('connection', { ws, request, event: 'connection' })
          .then(() => {
 
             const context: ConnectionContext = {
                ws: ws,
                request: request
-            }
+            };
 
             ws.on('close', this.createHandleOnClose(context));
             ws.on('upgrade', this.createHandleOnUpgrade(context));
             ws.on('message', this.createHandleOnMessage(context));
          })
          .catch(err => {
+            this.logger.trace('Erro na conexão do usuário. {err=', err, ' }');
             // Erro na conexao, remove todos os listeners            
             Topic.ALL.forEach(topic => {
                topic.unsubscribe(ws);
@@ -143,6 +153,8 @@ export default class Server {
 
    private createHandleOnUpgrade(context: ConnectionContext) {
       return (uws: WebSocket, urequest: http.IncomingMessage) => {
+         this.logger.trace('Updgrade da conexão efetuada: { url="', urequest.url, '", headers=', urequest.headers, ' }');
+
          context.ws = uws;
          context.request = urequest;
 
@@ -156,6 +168,9 @@ export default class Server {
 
    private createHandleOnClose(context: ConnectionContext) {
       return (code: number, reason: string) => {
+
+         this.logger.trace('Cliente desconectado: { code=', code, ', reason=', reason, ' }');
+
          // Ao desconectar, remove o socket de todos os tópicos
          Topic.ALL.forEach(topic => {
             topic.unsubscribe(context.ws);
@@ -174,6 +189,8 @@ export default class Server {
    private createHandleOnMessage(context: ConnectionContext) {
       return (data: WebSocket.Data) => {
 
+         this.logger.trace('Mensagem recebida: { data=', data, ' }');
+
          const midContext: ServerMidleWareMessageContext = {
             event: 'message',
             ws: context.ws,
@@ -190,8 +207,8 @@ export default class Server {
                const msg = midContext.data as string;
                try {
                   request = JSON.parse(msg);
-               } catch (e) {
-                  console.warn('Erro ao processar mensagem', msg);
+               } catch (err) {
+                  this.logger.warn('Erro ao processar mensagem. { msg=', msg, ', err=', err, ' }');
                   return;
                }
             } else {
@@ -200,6 +217,7 @@ export default class Server {
 
             if (!request.action) {
                // A única forma de conexão com o server, a partir daqui, é via actions
+               this.logger.warn('Mensagem proveniente do cliente sem action definida. { request=', request, ' }');
                return;
             }
 
@@ -216,6 +234,8 @@ export default class Server {
       Actions.exec(context, request)
          .then(data => {
 
+            this.logger.trace('Action executada com sucesso: { action=', request.action, ', requestId=', request.id, ', data=', data, ' }');
+
             // Envia a resposta ao solicitante
             if (context.ws.readyState === context.ws.OPEN) {
                context.ws.send(JSON.stringify({
@@ -225,11 +245,14 @@ export default class Server {
             }
          })
          .catch(cause => {
+
+            this.logger.warn('Erro no processamento da action: { action=', request.action, ', cause=', cause, ' }');
+
             // Envia o erro ao solicitante
             if (context.ws.readyState === context.ws.OPEN) {
                context.ws.send(JSON.stringify({
                   id: request.id,
-                  error: `${cause || 'Ocorreu um erro inesperado.'}`,
+                  error: `${cause || 'Ocorreu um erro inesperado.'} `,
                   stack: cause ? cause.stack : undefined
                } as ActionResponse));
             }

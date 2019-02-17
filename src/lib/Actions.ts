@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as WebSocket from 'ws';
+import Logger from "./util/Logger";
 import { ConnectionContext } from './NodeConstants';
 import MidlewareManager, { MidleWare } from './util/MidlewareManager';
 import { ActionRequest } from './Constants';
@@ -42,9 +43,15 @@ export type ActionMidleWare = MidleWare<ActionMidleWareContext>;
  */
 class Actions {
 
+   protected logger: Logger;
+
    private actions: { [key: string]: ActionCallback } = {};
 
    private middlewares: MidlewareManager<ActionMidleWareContext> = new MidlewareManager();
+
+   constructor() {
+      this.logger = Logger.get("entangled-states.Actions");
+   }
 
    /**
     * Registra uma nova ação que pode ser executada pelo usuário
@@ -53,6 +60,8 @@ class Actions {
     * @param callback 
     */
    register(name: string, callback: ActionCallback, middleware?: ActionMidleWare | Array<ActionMidleWare>) {
+      this.logger.info('Action registrado. { name=', name, ' }');
+
       this.actions[name] = callback;
       if (middleware) {
          this.use(middleware, name);
@@ -68,7 +77,11 @@ class Actions {
     */
    exec(context: ConnectionContext, request: ActionRequest): Promise<any> {
       let actionName = request.action;
+
+
       return new Promise<any>((accept, reject) => {
+         this.logger.trace('Executando action. { request=', request, ' }');
+
          if (!this.actions.hasOwnProperty(actionName)) {
             return reject('Operação não cadastrada');
          }
@@ -86,7 +99,7 @@ class Actions {
             .then(() => {
                // Executa a action
                this.actions[actionName](midlContext.data, midlContext.ws, accept, (cause: any, message?: string) => {
-                  console.error(actionName, cause, message || '');
+                  this.logger.error('Erro na execução da action. { cause=', cause, ', message=', (message || ''), ', request=', request, ' }');
                   reject(message || cause);
                });
             });

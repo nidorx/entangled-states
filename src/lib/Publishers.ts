@@ -1,4 +1,5 @@
 import Topic from './Topic';
+import Logger from "./util/Logger";
 import { AnyObject } from './Constants';
 import Repository from './repository/Repository';
 
@@ -84,10 +85,16 @@ export interface PublisherConfig {
  */
 class Publishers {
 
+   protected logger: Logger;
+
    private publishers: { [key: string]: (id?: any) => void } = {};
 
    // No momento da execução, cria um trotle
    private publishersByID: { [key: string]: (id?: any) => void } = {};
+
+   constructor() {
+      this.logger = Logger.get("entangled-states.Publishers");
+   }
 
    /**
     * Faz a publicação em um tópico

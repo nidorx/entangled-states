@@ -36,27 +36,46 @@ const METHODS = {
  */
 export default class Logger {
 
-   private static LOGS: { [key: string]: Logger } = {};
+   private static DEFAULT_LEVEL: LogLevel = 'INFO';
 
-   private static mainLogger = Logger.get('main');
+   private static INSTANCES: { [key: string]: Logger } = {};
 
    static get(name: string): Logger {
-      if (!Logger.LOGS[name]) {
-         Logger.LOGS[name] = new Logger(name)
+      if (!Logger.INSTANCES[name]) {
+         Logger.INSTANCES[name] = new Logger(name);
+         Logger.INSTANCES[name].setLevel(Logger.DEFAULT_LEVEL);
       }
-      return Logger.LOGS[name];
+      return Logger.INSTANCES[name];
+   }
+
+   /**
+    * Define o Level padrão e o level de todos os logs criados
+    * 
+    * @param level 
+    */
+   static setLevel(level: LogLevel): void {
+      Logger.DEFAULT_LEVEL = level;
+      for (var name in Logger.INSTANCES) {
+         if (!Logger.INSTANCES.hasOwnProperty(name)) {
+            continue;
+         }
+         Logger.INSTANCES[name].setLevel(level);
+      }
    }
 
    private name: string;
 
-   private level: LogLevel = 'INFO';
+   private level: LogLevel;
 
-   private levelValue: number = LEVELS['INFO'];
+   private levelName: string;
 
-   private levelName: string = NAMED['INFO'];
+   private levelValue: number;
 
    private constructor(name: string) {
       this.name = name;
+      this.level = Logger.DEFAULT_LEVEL;
+      this.levelName = NAMED[Logger.DEFAULT_LEVEL];
+      this.levelValue = LEVELS[Logger.DEFAULT_LEVEL];
    }
 
    trace(...args: any[]): void {
@@ -120,8 +139,6 @@ export default class Logger {
 
       METHODS[level](out.join(''));
    }
-
-   
 
    /**
     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value
